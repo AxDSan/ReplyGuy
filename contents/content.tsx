@@ -33,6 +33,10 @@ const buttonStyles = {
   transition: "all 0.2s ease",
   marginLeft: "0",
   height: "36px",
+  position: "relative",
+  zIndex: "1000",
+  minWidth: "36px",
+  justifyContent: "center",
   fontFamily:
     "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
 }
@@ -68,16 +72,16 @@ async function generateReply(post: Post) {
           "HTTP-Referer": "ReplyGuy"
         },
         body: JSON.stringify({
-          model: selectedModel || "mistralai/mistral-7b-instruct", // Fallback to default model
+          model: selectedModel || "microsoft/phi-4", // Fallback to default model
           messages: [
             {
               role: "system",
               content:
-                "You are a helpful assistant that generates engaging and relevant replies to social media posts. Keep responses concise, natural, and engaging. Aim for a friendly and conversational tone in plain everyday coloquial english."
+                "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation in everyday coloquial english."
             },
             {
               role: "user",
-              content: `Please generate a short and brief reply to this post by ${post.author}: "${post.text}"`
+              content: `Generate a brief, casual reply to this post "${post.text}". Keep it natural and conversational, as if you're just another person on the platform.`
             }
           ]
         })
@@ -141,6 +145,7 @@ async function handleReplyClick(postElement: Element) {
     }
 
     if (reply && button) {
+      // Find the reply button within this specific post
       const replyButton = await querySelector(
         '[data-testid="reply"]',
         postElement
@@ -148,17 +153,24 @@ async function handleReplyClick(postElement: Element) {
       if (replyButton) {
         ;(replyButton as HTMLElement).click()
 
-        // Wait for reply modal to open
+        // Wait for reply modal to open and find it
         const modalTimeout = setTimeout(async () => {
           if (!chrome.runtime?.id) {
             clearTimeout(modalTimeout)
             return
           }
 
-          // Find the DraftJS editor root
-          const editorRoot = await querySelector(".DraftEditor-root")
+          // Find the modal that's currently open
+          const modal = await querySelector('[aria-labelledby="modal-header"]')
+          if (!modal) {
+            console.error("Could not find reply modal")
+            return
+          }
+
+          // Find the DraftJS editor root within this specific modal
+          const editorRoot = await querySelector(".DraftEditor-root", modal)
           if (editorRoot) {
-            // Remove placeholder
+            // Remove placeholder within this modal
             const placeholder = await querySelector(
               ".public-DraftEditorPlaceholder-root",
               editorRoot
@@ -167,7 +179,7 @@ async function handleReplyClick(postElement: Element) {
               placeholder.remove()
             }
 
-            // Find the contenteditable div
+            // Find the contenteditable div within this modal
             const editor = await querySelector(
               '[contenteditable="true"]',
               editorRoot
@@ -203,8 +215,10 @@ async function handleReplyClick(postElement: Element) {
 
                     // Wait a bit for Twitter to process the input
                     setTimeout(async () => {
+                      // Find the submit button within this specific modal
                       const submitButton = (await querySelector(
-                        '[data-testid="tweetButton"]'
+                        '[data-testid="tweetButton"]',
+                        modal
                       )) as HTMLButtonElement
                       if (submitButton) {
                         submitButton.disabled = false
@@ -236,29 +250,37 @@ async function handleReplyClick(postElement: Element) {
 }
 
 async function addReplyGuyButton(postElement: Element) {
-  // Check if button already exists
-  if (await querySelector(".replyguy-button", postElement)) {
-    return
-  }
+  console.log("Attempting to add ReplyGuy button to post", postElement)
 
   // Find the actions group (where reply, retweet, like buttons are)
-  const actionsGroup = await querySelector(
-    '[role="group"][id*="id__"]',
-    postElement
-  )
-  if (!actionsGroup) return
+  // Use a more specific selector to ensure we get the correct actions group for this post
+  const actionsGroup = postElement.querySelector('[role="group"][id*="id__"]')
+  if (!actionsGroup) {
+    console.log("Could not find actions group for post")
+    return
+  }
+  console.log("Found actions group", actionsGroup)
+
+  // Check if button already exists in this specific actions group
+  const existingButton = actionsGroup.querySelector(".replyguy-button")
+  if (existingButton) {
+    console.log("Button already exists in this actions group")
+    return
+  }
 
   // Create button container to match Twitter's structure
   const buttonContainer = document.createElement("div")
   buttonContainer.className = "css-175oi2r r-18u37iz r-1h0z5md r-13awgt0"
+  buttonContainer.style.position = "relative"
+  buttonContainer.style.zIndex = "1000"
+  buttonContainer.setAttribute("data-testid", "replyguy-container")
 
   const button = document.createElement("button")
   button.className =
     "replyguy-button css-175oi2r r-1777fci r-bt1l66 r-bztko3 r-lrvibr r-1loqt21 r-1ny4l3l"
   Object.assign(button.style, buttonStyles)
 
-  button.innerHTML =
-    '<div dir="ltr" class="css-146c3p1 r-bcqeeo r-qvutc0 r-37j5jr r-a023e6 r-rjixqe r-16dba41 r-1awozwy r-6koalj r-1h0z5md r-o7ynqc r-clp7b1 r-3s2u2q" style="color: rgb(113, 118, 123);"><div class="css-175oi2r r-xoduu5"><div class="css-175oi2r r-xoduu5 r-1p0dtai r-1d2f490 r-u8s1d r-zchlnj r-ipm5af r-1niwhzg r-sdzlij r-xf4iuw r-o7ynqc r-6416eg r-1ny4l3l"></div>🤖</div></div>'
+  button.innerHTML = "🤖"
 
   // Add hover effects
   button.addEventListener("mouseover", () => {
@@ -279,22 +301,35 @@ async function addReplyGuyButton(postElement: Element) {
   button.addEventListener("click", () => handleReplyClick(postElement))
 
   buttonContainer.appendChild(button)
-  actionsGroup.insertBefore(buttonContainer, actionsGroup.lastElementChild)
+
+  // Insert before the last element (usually the share button)
+  const lastElement = actionsGroup.lastElementChild
+  if (lastElement) {
+    actionsGroup.insertBefore(buttonContainer, lastElement)
+  } else {
+    actionsGroup.appendChild(buttonContainer)
+  }
 }
 
 async function observePosts() {
+  console.log("Setting up post observer")
   const observer = new MutationObserver(async (mutations) => {
+    console.log("Mutation observed", mutations)
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node instanceof Element) {
           // Check if the added node is a tweet
           if (node.matches('article[role="article"]')) {
+            console.log("Found tweet article", node)
             await addReplyGuyButton(node)
           }
           // Also check children in case the tweet is nested
           const tweets = node.querySelectorAll('article[role="article"]')
-          for (const tweet of tweets) {
-            await addReplyGuyButton(tweet)
+          if (tweets.length > 0) {
+            console.log("Found nested tweets", tweets)
+            for (const tweet of tweets) {
+              await addReplyGuyButton(tweet)
+            }
           }
         }
       }
@@ -302,9 +337,11 @@ async function observePosts() {
   })
 
   try {
+    console.log("Looking for timeline")
     // Try to find the timeline with error handling
     const timeline = await querySelector('[data-testid="primaryColumn"]')
     if (timeline) {
+      console.log("Found timeline, setting up observer", timeline)
       observer.observe(timeline, {
         childList: true,
         subtree: true
@@ -312,6 +349,7 @@ async function observePosts() {
 
       // Add buttons to existing posts
       const existingPosts = document.querySelectorAll('article[role="article"]')
+      console.log("Found existing posts:", existingPosts.length)
       for (const post of existingPosts) {
         await addReplyGuyButton(post)
       }
