@@ -111,14 +111,8 @@ async function handleReplyClick(postElement: Element) {
     return
   }
 
-  const textElement = await querySelector(
-    '[data-testid="tweetText"]',
-    postElement
-  )
-  const authorElement = await querySelector(
-    '[data-testid="User-Name"]',
-    postElement
-  )
+  const textElement = postElement.querySelector('[data-testid="tweetText"]')
+  const authorElement = postElement.querySelector('[data-testid="User-Name"]')
 
   if (!textElement || !authorElement) return
 
@@ -128,10 +122,7 @@ async function handleReplyClick(postElement: Element) {
     author: authorElement.textContent || ""
   }
 
-  const button = (await querySelector(
-    ".replyguy-button",
-    postElement
-  )) as HTMLButtonElement
+  const button = postElement.querySelector(".replyguy-button") as HTMLButtonElement
   if (button) {
     Object.assign(button.style, loadingStyles)
     button.innerHTML = "🤖 Generating..."
@@ -145,13 +136,9 @@ async function handleReplyClick(postElement: Element) {
     }
 
     if (reply && button) {
-      // Find the reply button within this specific post
-      const replyButton = await querySelector(
-        '[data-testid="reply"]',
-        postElement
-      )
+      const replyButton = postElement.querySelector('[data-testid="reply"]')
       if (replyButton) {
-        ;(replyButton as HTMLElement).click()
+        (replyButton as HTMLElement).click()
 
         // Wait for reply modal to open and find it
         const modalTimeout = setTimeout(async () => {
@@ -160,47 +147,36 @@ async function handleReplyClick(postElement: Element) {
             return
           }
 
-          // Find the modal that's currently open
-          const modal = await querySelector('[aria-labelledby="modal-header"]')
+          // Find the most recently opened modal
+          const modals = document.querySelectorAll('[aria-labelledby="modal-header"]')
+          const modal = modals[modals.length - 1] // Get the last (most recent) modal
           if (!modal) {
             console.error("Could not find reply modal")
             return
           }
 
           // Find the DraftJS editor root within this specific modal
-          const editorRoot = await querySelector(".DraftEditor-root", modal)
+          const editorRoot = modal.querySelector(".DraftEditor-root")
           if (editorRoot) {
             // Remove placeholder within this modal
-            const placeholder = await querySelector(
-              ".public-DraftEditorPlaceholder-root",
-              editorRoot
-            )
+            const placeholder = editorRoot.querySelector(".public-DraftEditorPlaceholder-root")
             if (placeholder) {
               placeholder.remove()
             }
 
             // Find the contenteditable div within this modal
-            const editor = await querySelector(
-              '[contenteditable="true"]',
-              editorRoot
-            )
+            const editor = editorRoot.querySelector('[contenteditable="true"]') as HTMLElement
             if (editor) {
               // Focus the editor first
               editor.focus()
 
               // Create text node and insert it
               const textNode = document.createTextNode(reply)
-              const firstDiv = await querySelector(
-                'div[data-contents="true"]',
-                editor
-              )
+              const firstDiv = editor.querySelector('div[data-contents="true"]')
               if (firstDiv) {
                 const firstBlock = firstDiv.firstElementChild
                 if (firstBlock) {
-                  const textContainer = await querySelector(
-                    ".public-DraftStyleDefault-block",
-                    firstBlock
-                  )
+                  const textContainer = firstBlock.querySelector(".public-DraftStyleDefault-block")
                   if (textContainer) {
                     textContainer.innerHTML = ""
                     textContainer.appendChild(textNode)
@@ -216,10 +192,9 @@ async function handleReplyClick(postElement: Element) {
                     // Wait a bit for Twitter to process the input
                     setTimeout(async () => {
                       // Find the submit button within this specific modal
-                      const submitButton = (await querySelector(
-                        '[data-testid="tweetButton"]',
-                        modal
-                      )) as HTMLButtonElement
+                      const submitButton = modal.querySelector(
+                        '[data-testid="tweetButton"]'
+                      ) as HTMLButtonElement
                       if (submitButton) {
                         submitButton.disabled = false
                         submitButton.click()
