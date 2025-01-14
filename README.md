@@ -1,33 +1,107 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+# 🤖 ReplyGuy
 
-## Getting Started
+A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with [Plasmo](https://www.plasmo.com/) and powered by [OpenRouter](https://openrouter.ai/).
 
-First, run the development server:
+![ReplyGuy Demo](assets/demo.gif)
+
+## ✨ Features
+
+- 🤖 One-click AI-generated replies to posts
+- 🎯 Context-aware responses that maintain conversation flow
+- 🎨 Modern, clean UI that integrates seamlessly with Twitter
+- 🔄 Real-time post detection and button injection
+- 🎛️ Support for multiple AI models through OpenRouter
+- 🔒 Secure API key management
+- 🌐 Works on both Twitter.com and X.com
+
+## 🚀 Installation
+
+1. Clone this repository:
+
+```bash
+git clone https://github.com/yourusername/replyguy.git
+cd replyguy
+```
+
+2. Install dependencies:
+
+```bash
+pnpm install
+```
+
+3. Run in development mode:
 
 ```bash
 pnpm dev
-# or
-npm run dev
 ```
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
-
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
-
-Run the following:
+4. Build for production:
 
 ```bash
 pnpm build
-# or
-npm run build
 ```
 
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
+## 🔧 Configuration
 
-## Submit to the webstores
+1. Get your API key from [OpenRouter](https://openrouter.ai/)
+2. Click the ReplyGuy extension icon in your browser
+3. Enter your OpenRouter API key
+4. Select your preferred AI model
+5. Enable auto-reply
+6. Save settings
 
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!
+## 🎮 Usage
+
+1. Navigate to Twitter/X
+2. Look for the 🤖 button next to the reply button on any post
+3. Click the button to generate and submit an AI-powered reply
+4. The extension will automatically generate and post a contextually relevant reply
+
+## 🧩 Supported Models
+
+ReplyGuy supports all models available through OpenRouter, including:
+
+- Mistral-7B
+- Claude
+- GPT-4
+- And many more!
+
+## 🛠️ Development
+
+This extension is built with:
+
+- [Plasmo Framework](https://www.plasmo.com/) - Browser extension framework
+- [React](https://reactjs.org/) - UI library
+- [OpenRouter](https://openrouter.ai/) - AI model provider
+- TypeScript - Programming language
+
+### Project Structure
+
+```
+replyguy/
+├── contents/          # Content scripts
+│   └── content.tsx    # Main content script
+├── popup.tsx          # Extension popup UI
+├── background.ts      # Background service worker
+└── assets/           # Static assets
+```
+
+## 🔍 Selector Monitoring
+
+ReplyGuy uses Plasmo's selector monitoring system to ensure reliability:
+
+- Automatic detection of broken selectors
+- Email notifications when Twitter's DOM structure changes
+- Easy maintenance and updates
+
+## 📝 License
+
+MIT License - feel free to use this project however you'd like!
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## ⚠️ Disclaimer
+
+This extension is not affiliated with Twitter/X or OpenRouter. Use it responsibly and in accordance with Twitter's terms of service.
