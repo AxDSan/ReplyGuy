@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0 # Fetch all history for accurate commit comparison
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -30,14 +30,36 @@ jobs:
       - name: Build Production
         run: npm run build:prod
 
+      - name: Get Last Tag
+        id: get_last_tag
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ ! -z "$LAST_TAG" ]; then
+            LAST_TAG_VERSION=$(echo $LAST_TAG | cut -c2-)
+          fi
+          echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
+          echo "LAST_TAG_VERSION=$LAST_TAG_VERSION" >> $GITHUB_ENV
+
+      - name: Check for Feature Commits
+        id: check_feature_commits
+        run: |
+          FEATURE_COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD | grep -iE "^feat|^add|^new")
+          if [[ -n "$FEATURE_COMMITS" ]]; then
+            echo "HAS_FEATURE_COMMITS=true" >> $GITHUB_ENV
+          else
+            echo "HAS_FEATURE_COMMITS=false" >> $GITHUB_ENV
+          fi
+
       - name: Extract Current Version
         id: extract_version
+        if: env.HAS_FEATURE_COMMITS == 'true'
         run: |
           CURRENT_VERSION=$(jq -r .version package.json)
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
       - name: Increment Version
         id: increment_version
+        if: env.HAS_FEATURE_COMMITS == 'true'
         run: |
           OLD_VERSION="${{ env.CURRENT_VERSION }}"
           IFS='.' read -r major minor patch <<< "$OLD_VERSION"
@@ -46,10 +68,12 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Update package.json
+        if: env.HAS_FEATURE_COMMITS == 'true'
         run: |
           jq --arg newVersion "${{ env.NEW_VERSION }}" '.version = $newVersion' package.json > package.json.tmp && mv package.json.tmp package.json
 
       - name: Commit and Tag
+        if: env.HAS_FEATURE_COMMITS == 'true'
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -58,14 +82,14 @@ jobs:
           git tag v${{ env.NEW_VERSION }}
           git push origin "v${{ env.NEW_VERSION }}"
 
-      - name: Create Release
+      - name: Create or Update Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
+          tag_name: ${{ env.HAS_FEATURE_COMMITS == 'true' && format('v{0}', env.NEW_VERSION) || env.LAST_TAG }}
+          release_name: ${{ env.HAS_FEATURE_COMMITS == 'true' && format('Release v{0}', env.NEW_VERSION) || format('Release {0}', env.LAST_TAG) }}
           draft: false
           prerelease: false
           body: |
@@ -73,11 +97,16 @@ jobs:
 
             To install the extension, follow these steps:
 
-            1. Download the `reply-guy-v${{ env.NEW_VERSION }}-prod.zip` file from the release assets.
+            1. Download the `reply-guy-${{ env.HAS_FEATURE_COMMITS == 'true' && format('v{0}', env.NEW_VERSION) || env.LAST_TAG_VERSION }}-prod.zip` file from the release assets.
             2. Extract the zip file to a directory of your choice.
             3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).
             4. Enable 'Developer mode' at the top right corner.
             5. Click on 'Load unpacked' and select the extracted directory.
+
+            **Changes:**
+            ```
+            $(git log --pretty=format:"- %s" ${{ env.LAST_TAG }}..HEAD | grep -v "chore: bump version to v")
+            ```
 
       - name: Upload Build to Release
         uses: actions/upload-release-asset@v1
@@ -86,5 +115,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/reply-guy-prod.zip
-          asset_name: reply-guy-v${{ env.NEW_VERSION }}-prod.zip
+          asset_name: reply-guy-${{ (env.HAS_FEATURE_COMMITS || 'false') == 'true' && format('v{0}', env.NEW_VERSION) || env.LAST_TAG_VERSION }}-prod.zip
           asset_content_type: application/zip
