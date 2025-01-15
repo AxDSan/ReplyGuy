@@ -55,7 +55,7 @@ jobs:
       - name: Set Asset Path
         id: set_asset_path
         run: |
-          echo "ASSET_PATH=reply-guy-prod.zip" >> $GITHUB_ENV
+          echo "ASSET_PATH=build/reply-guy-prod.zip" >> $GITHUB_ENV
 
       - name: List Files
         run: ls -la
