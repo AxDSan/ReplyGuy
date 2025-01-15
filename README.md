@@ -4,6 +4,9 @@ A browser extension that adds AI-powered reply capabilities to your X/Twitter ex
 
 ![ReplyGuy](https://i.imgur.com/LZbAgI6.png)
 
+Support me!
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y7189H2F)
+
 ## ✨ Features
 
 - 🤖 One-click AI-generated replies to posts
@@ -46,7 +49,7 @@ ReplyGuy implements multiple layers of security to protect your API key:
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/yourusername/replyguy.git
+git clone https://github.com/axdsan/replyguy.git
 cd replyguy
 ```
 
