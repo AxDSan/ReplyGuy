@@ -39,9 +39,14 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: |
-          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          else
+            echo "TAG=refs/heads/master" >> $GITHUB_ENV
+          fi
 
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -53,6 +58,7 @@ jobs:
           prerelease: false
 
       - name: Upload Build to Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,6 +69,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Installation Instructions to Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
