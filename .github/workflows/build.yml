@@ -92,11 +92,6 @@ jobs:
             3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).
             4. Enable 'Developer mode' at the top right corner.
             5. Click on 'Load unpacked' and select the extracted directory.
-
-            **Changes:**
-            ```
-            $(git log --pretty=format:"- %s" ${{ env.LAST_TAG }}..HEAD | grep -v "chore: bump version to v")
-            ```
         ignore_if_exists: ${{ env.HAS_FEATURE_COMMITS != 'true' }}
 
       - name: Upload Build to Release
