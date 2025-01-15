@@ -250,7 +250,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: release_notes.txt
-          asset_name: reply-guy-${{ env.LAST_TAG }}-release-notes.txt
+          asset_name: reply-guy-release-notes.txt
           asset_content_type: text/plain
         if: steps.get_existing_release.outputs.release_id == ''
 
@@ -282,5 +282,5 @@ jobs:
         with:
           upload_url: ${{ steps.get_existing_release.outputs.upload_url }}
           asset_path: release_notes.txt
-          asset_name: reply-guy-${{ env.LAST_TAG }}-release-notes.txt
+          asset_name: reply-guy-release-notes.txt
           asset_content_type: text/plain
