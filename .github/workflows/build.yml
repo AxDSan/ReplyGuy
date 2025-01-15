@@ -106,7 +106,7 @@ jobs:
 
             To install the extension, follow these steps:
 
-            1. Download the `reply-guy-${{ env.HAS_FEATURE_COMMITS == 'true' && format('v{0}', env.NEW_VERSION) || env.LAST_TAG_VERSION }}-prod.zip` file from the release assets.
+            1. Download the `reply-guy-v${{ env.HAS_FEATURE_COMMITS == 'true' && env.NEW_VERSION ||  (env.LAST_TAG != '' && substring(env.LAST_TAG, 1)) }}-prod.zip` file from the release assets.
             2. Extract the zip file to a directory of your choice.
             3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).
             4. Enable 'Developer mode' at the top right corner.
@@ -116,6 +116,7 @@ jobs:
             ```
             $(git log --pretty=format:"- %s" ${{ env.LAST_TAG }}..HEAD | grep -v "chore: bump version to v")
             ```
+        ignore_if_exists: ${{ env.HAS_FEATURE_COMMITS != 'true' }}
 
       - name: Upload Build to Release
         uses: actions/upload-release-asset@v1
