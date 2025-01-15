@@ -214,7 +214,7 @@ jobs:
                 tag: LAST_TAG,
               });
               core.setOutput('release_id', release.data.id);
-              core.setOutput('upload_url', release.data.upload_url);
+              core.setOutput('upload_url', release.data.upload_url.split('{')[0]);
             } catch (error) {
               core.setOutput('release_id', '');
               core.setOutput('upload_url', '');
