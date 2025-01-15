@@ -31,7 +31,11 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: |
-          echo "TAG=${GITHUB_REF#refs/heads/master}" >> $GITHUB_ENV
+          TAG=$(git log -1 --pretty=format:"%s" | grep -oP 'v\d+\.\d+\.\d+')
+          if [[ -z "$TAG" ]]; then
+            TAG="master"
+          fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
           echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
       - name: Generate Release Notes
