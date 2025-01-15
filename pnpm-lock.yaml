@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@plasmohq/messaging':
-        specifier: ^0.6.1
+        specifier: ^0.6.2
         version: 0.6.2(react@18.2.0)
       '@plasmohq/selector':
         specifier: ^0.0.5

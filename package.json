@@ -1,16 +1,18 @@
 {
   "name": "replyguy",
-  "displayName": "Replyguy",
+  "displayName": "ReplyGuy",
   "version": "0.0.1",
-  "description": "A reply guy extension for X, deploy AI agent to automatically reply to posts",
-  "author": "AbdiiSan",
+  "description": "A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with Plasmo and powered by OpenRouter.",
+  "author": "@abdiisan",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
+    "build:prod": "plasmo build --mode production --zip",
+    "build:dev": "plasmo build --mode development",
     "package": "plasmo package"
   },
   "dependencies": {
-    "@plasmohq/messaging": "^0.6.1",
+    "@plasmohq/messaging": "^0.6.2",
     "@plasmohq/selector": "^0.0.5",
     "@plasmohq/storage": "^1.13.0",
     "plasmo": "0.89.4",

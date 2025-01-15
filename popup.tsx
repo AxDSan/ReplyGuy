@@ -519,7 +519,7 @@ function IndexPopup() {
         </div>
         • Get your API key from{" "}
         <a
-          href="https://openrouter.ai/"
+          href="https://openrouter.ai/settings/keys"
           target="_blank"
           style={{
             color: theme.colors.primary,
