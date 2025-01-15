@@ -94,7 +94,7 @@ jobs:
           echo "" >> release_notes.txt
           echo "The extension should now be installed and ready to use." >> release_notes.txt
 
-      - name: Create or Update Release
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -166,11 +166,32 @@ jobs:
           echo "" >> release_notes.txt
           echo "The extension should now be installed and ready to use." >> release_notes.txt
 
+      - name: Get Existing Release
+        id: get_existing_release
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          script: |
+            const { LAST_TAG } = process.env;
+            try {
+              const release = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: LAST_TAG,
+              });
+              core.setOutput('release_id', release.data.id);
+            } catch (error) {
+              core.setOutput('release_id', '');
+              console.log('No existing release found for tag:', LAST_TAG);
+            }
+
       - name: Create or Update Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.get_existing_release.outputs.release_id == ''
         with:
           tag_name: ${{ env.LAST_TAG }}
           release_name: Release ${{ env.LAST_TAG }}
@@ -186,7 +207,6 @@ jobs:
             3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).
             4. Enable 'Developer mode' at the top right corner.
             5. Click on 'Load unpacked' and select the extracted directory.
-        ignore_if_exists: true
 
       - name: Upload Installation Instructions to Release
         uses: actions/upload-release-asset@v1
@@ -194,6 +214,36 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release_notes.txt
+          asset_name: reply-guy-${{ env.LAST_TAG }}-release-notes.txt
+          asset_content_type: text/plain
+        if: steps.get_existing_release.outputs.release_id == ''
+
+      - name: Update Existing Release
+        uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.get_existing_release.outputs.release_id != ''
+        with:
+          script: |
+            const { LAST_TAG } = process.env;
+            const { release_id } = core.getMultilineInput('get_existing_release.outputs.release_id');
+            const fs = require('fs');
+            const releaseNotes = fs.readFileSync('release_notes.txt', 'utf8');
+            await github.rest.repos.updateRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              release_id: release_id,
+              body: `## Installation Instructions\n\nTo install the extension, follow these steps:\n\n1. Download the \`reply-guy-${LAST_TAG}-prod.zip\` file from the release assets.\n2. Extract the zip file to a directory of your choice.\n3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).\n4. Enable 'Developer mode' at the top right corner.\n5. Click on 'Load unpacked' and select the extracted directory.\n\n${releaseNotes}`
+            });
+
+      - name: Upload Installation Instructions to Existing Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.get_existing_release.outputs.release_id != ''
+        with:
+          upload_url: ${{ steps.get_existing_release.outputs.upload_url }}
           asset_path: release_notes.txt
           asset_name: reply-guy-${{ env.LAST_TAG }}-release-notes.txt
           asset_content_type: text/plain
