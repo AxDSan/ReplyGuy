@@ -57,6 +57,9 @@ jobs:
         run: |
           echo "ASSET_PATH=reply-guy-prod.zip" >> $GITHUB_ENV
 
+      - name: List Files
+        run: ls -la
+
       - name: Extract Current Version
         id: extract_version
         run: |
