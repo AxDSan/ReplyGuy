@@ -17,33 +17,14 @@ Support me!
 - 🎛️ Support for multiple AI models through OpenRouter
 - 🔒 Enterprise-grade API key security
 
-## 🔐 Security
+## 🔐 API Key Security
 
-ReplyGuy implements multiple layers of security to protect your API key:
+ReplyGuy ensures API key security through:
 
-1. **Encryption**:
-
-   - AES-GCM 256-bit encryption for API key storage
-   - Unique salt and IV for each encryption
-   - PBKDF2 key derivation with 100,000 iterations
-
-2. **Secure Storage**:
-
-   - Keys stored in browser's protected local storage area
-   - Extension-specific encryption keys derived from extension ID
-   - No plaintext storage of sensitive data
-
-3. **Access Control**:
-
-   - API keys are only accessible within the extension context
-   - Memory-safe handling of sensitive data
-   - Automatic cleanup of decrypted data
-
-4. **Best Practices**:
-   - Zero trust architecture
-   - Principle of least privilege
-   - Secure error handling
-   - No external transmission of keys
+* AES-GCM 256-bit encryption with unique salt and IV, and PBKDF2 key derivation
+* Secure storage in the browser's protected local storage area with extension-specific encryption keys
+* Access control measures, including context-specific access, memory-safe handling, and automatic cleanup
+* Implementation of best practices, such as zero trust architecture, principle of least privilege, secure error handling, and no external key transmission
 
 ## 🚀 Installation
 
