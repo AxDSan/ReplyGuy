@@ -69,9 +69,19 @@ jobs:
           draft: false
           prerelease: false
           body: |
+            ## Installation Instructions
+
+            To install the extension, follow these steps:
+
+            1. Download the `reply-guy-v${{ env.NEW_VERSION }}-prod.zip` file from the release assets.
+            2. Extract the zip file to a directory of your choice.
+            3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).
+            4. Enable 'Developer mode' at the top right corner.
+            5. Click on 'Load unpacked' and select the extracted directory.
+
             **Changes:**
             ```
-            $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD)
+            $(git log --pretty=format:"- %s" $(git describe --tags --abbrev=0)..HEAD | grep -v "chore: bump version to v${{ env.NEW_VERSION }}")
             ```
 
       - name: Upload Build to Release
