@@ -2,9 +2,10 @@
 
 A browser extension that adds AI-powered reply capabilities to your 𝕏 experience. Built with [Plasmo](https://www.plasmo.com/) and powered by [OpenRouter](https://openrouter.ai/).
 
-![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
+![ReplyGuy](https://fal.media/files/rabbit/9jKCne1JZQne7SbpHkJrp.png)
 
 Support me!
+
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y7189H2F)
 
 ## ✨ Features
@@ -72,6 +73,7 @@ pnpm build
 ```
 
 ## 🔧 Configuration
+![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
 
 1. Get your API key from [OpenRouter](https://openrouter.ai/)
 2. Click the ReplyGuy extension icon in your browser
