@@ -145,12 +145,30 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for Existing Tags
+        id: check_tags
+        run: |
+          HAS_TAGS=false
+          if git tag --list; then
+            HAS_TAGS=true
+          fi
+          echo "HAS_TAGS=$HAS_TAGS" >> $GITHUB_ENV
+          echo "HAS_TAGS=$HAS_TAGS" >> $GITHUB_OUTPUT
+
       - name: Get Last Tag
         id: get_last_tag
+        if: env.HAS_TAGS == 'true'
         run: |
           LAST_TAG=$(git describe --tags --abbrev=0)
           echo "LAST_TAG=$LAST_TAG" >> $GITHUB_ENV
           echo "LAST_TAG=$LAST_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Set Default Tag
+        id: set_default_tag
+        if: env.HAS_TAGS != 'true'
+        run: |
+          echo "LAST_TAG=v0.0.0" >> $GITHUB_ENV
+          echo "LAST_TAG=v0.0.0" >> $GITHUB_OUTPUT
 
       - name: Generate Release Notes
         run: |
