@@ -214,8 +214,10 @@ jobs:
                 tag: LAST_TAG,
               });
               core.setOutput('release_id', release.data.id);
+              core.setOutput('upload_url', release.data.upload_url);
             } catch (error) {
               core.setOutput('release_id', '');
+              core.setOutput('upload_url', '');
               console.log('No existing release found for tag:', LAST_TAG);
             }
 
@@ -277,7 +279,6 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: steps.get_existing_release.outputs.release_id != '' && steps.get_existing_release.outputs.release_id != null
         with:
           upload_url: ${{ steps.get_existing_release.outputs.upload_url }}
           asset_path: release_notes.txt
