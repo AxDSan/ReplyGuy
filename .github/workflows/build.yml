@@ -28,15 +28,33 @@ jobs:
       - name: Build Production
         run: npm run build:prod
 
-      - name: Extract Tag
-        id: extract_tag
+      - name: Extract Current Version
+        id: extract_version
         run: |
-          TAG=$(git log -1 --pretty=format:"%s" | grep -oP 'v\d+\.\d+\.\d+' || true)
-          if [[ -z "$TAG" ]]; then
-            TAG="master"
-          fi
-          echo "TAG=$TAG" >> $GITHUB_ENV
-          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          CURRENT_VERSION=$(jq -r .version package.json)
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+
+      - name: Increment Version
+        id: increment_version
+        run: |
+          OLD_VERSION="${{ env.CURRENT_VERSION }}"
+          IFS='.' read -r major minor patch <<< "$OLD_VERSION"
+          NEW_PATCH=$((patch + 1))
+          NEW_VERSION="$major.$minor.$NEW_PATCH"
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+      - name: Update package.json
+        run: |
+          jq --arg newVersion "${{ env.NEW_VERSION }}" '.version = $newVersion' package.json > package.json.tmp && mv package.json.tmp package.json
+
+      - name: Commit and Tag
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add package.json
+          git commit -m "chore: bump version to v${{ env.NEW_VERSION }}"
+          git tag v${{ env.NEW_VERSION }}
+          git push origin "v${{ env.NEW_VERSION }}"
 
       - name: Generate Release Notes
         run: |
@@ -44,7 +62,7 @@ jobs:
           echo "" >> release_notes.txt
           echo "To install the extension, follow these steps:" >> release_notes.txt
           echo "" >> release_notes.txt
-          echo "1. Download the \`reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-prod.zip\` file from the release assets." >> release_notes.txt
+          echo "1. Download the \`reply-guy-v${{ env.NEW_VERSION }}-prod.zip\` file from the release assets." >> release_notes.txt
           echo "2. Extract the zip file to a directory of your choice." >> release_notes.txt
           echo "3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions)." >> release_notes.txt
           echo "4. Enable 'Developer mode' at the top right corner." >> release_notes.txt
@@ -58,8 +76,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.TAG }}-${{ env.SHORT_SHA }}
-          release_name: Release v${{ env.TAG }}-${{ env.SHORT_SHA }}
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
           draft: false
           prerelease: false
 
@@ -70,7 +88,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/chrome-mv3-prod.zip
-          asset_name: reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-prod.zip
+          asset_name: reply-guy-v${{ env.NEW_VERSION }}-prod.zip
           asset_content_type: application/zip
 
       - name: Upload Installation Instructions to Release
@@ -80,5 +98,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: release_notes.txt
-          asset_name: reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-release-notes.txt
+          asset_name: reply-guy-v${{ env.NEW_VERSION }}-release-notes.txt
           asset_content_type: text/plain
