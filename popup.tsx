@@ -276,28 +276,51 @@ function IndexPopup() {
           display: "flex",
           alignItems: "center",
           marginBottom: 24,
-          gap: 12
+          gap: 12,
+          justifyContent: "space-between"
         }}>
-        <div
-          style={{
-            fontSize: 24,
-            fontWeight: "bold",
-            background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})`,
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent"
-          }}>
-          ReplyGuy
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: "bold",
+              background: `linear-gradient(135deg, ${theme.colors.primary}, ${theme.colors.secondary})`,
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent"
+            }}>
+            ReplyGuy
+          </div>
+          <div
+            style={{
+              fontSize: 12,
+              color: theme.colors.textMuted,
+              backgroundColor: theme.colors.cardBg,
+              padding: "4px 8px",
+              borderRadius: 12
+            }}>
+            v0.0.1
+          </div>
         </div>
-        <div
+        <a
+          href="https://ko-fi.com/Y8Y7189H2F"
+          target="_blank"
+          rel="noopener noreferrer"
           style={{
-            fontSize: 12,
-            color: theme.colors.textMuted,
-            backgroundColor: theme.colors.cardBg,
-            padding: "4px 8px",
-            borderRadius: 12
+            display: "inline-block",
+            transition: "transform 0.2s ease",
+            "&:hover": {
+              transform: "translateY(-1px)"
+            }
           }}>
-          v0.0.1
-        </div>
+          <img
+            src="https://ko-fi.com/img/githubbutton_sm.svg"
+            alt="Support me on Ko-fi"
+            style={{
+              height: "28px",
+              borderRadius: "4px"
+            }}
+          />
+        </a>
       </div>
 
       <div
