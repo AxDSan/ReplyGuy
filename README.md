@@ -11,8 +11,35 @@ A browser extension that adds AI-powered reply capabilities to your X/Twitter ex
 - 🎨 Modern, clean UI that integrates seamlessly with Twitter
 - 🔄 Real-time post detection and button injection
 - 🎛️ Support for multiple AI models through OpenRouter
-- 🔒 Secure API key management
-- 🌐 Works on both Twitter.com and X.com
+- 🔒 Enterprise-grade API key security
+
+## 🔐 Security
+
+ReplyGuy implements multiple layers of security to protect your API key:
+
+1. **Encryption**:
+
+   - AES-GCM 256-bit encryption for API key storage
+   - Unique salt and IV for each encryption
+   - PBKDF2 key derivation with 100,000 iterations
+
+2. **Secure Storage**:
+
+   - Keys stored in browser's protected local storage area
+   - Extension-specific encryption keys derived from extension ID
+   - No plaintext storage of sensitive data
+
+3. **Access Control**:
+
+   - API keys are only accessible within the extension context
+   - Memory-safe handling of sensitive data
+   - Automatic cleanup of decrypted data
+
+4. **Best Practices**:
+   - Zero trust architecture
+   - Principle of least privilege
+   - Secure error handling
+   - No external transmission of keys
 
 ## 🚀 Installation
 
