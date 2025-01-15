@@ -256,7 +256,7 @@ jobs:
         uses: actions/github-script@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: steps.get_existing_release.outputs.release_id != ''
+        if: steps.get_existing_release.outputs.release_id != '' && steps.get_existing_release.outputs.release_id != null
         with:
           script: |
             const { LAST_TAG } = process.env;
@@ -274,7 +274,7 @@ jobs:
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: steps.get_existing_release.outputs.release_id != ''
+        if: steps.get_existing_release.outputs.release_id != '' && steps.get_existing_release.outputs.release_id != null
         with:
           upload_url: ${{ steps.get_existing_release.outputs.upload_url }}
           asset_path: release_notes.txt
