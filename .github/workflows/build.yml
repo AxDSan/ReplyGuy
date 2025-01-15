@@ -60,6 +60,7 @@ jobs:
 
       - name: Increment Version
         id: increment_version
+        if: ${{ needs.build.outputs.should_build == 'true' }}
         run: |
           OLD_VERSION="${{ env.CURRENT_VERSION }}"
           IFS='.' read -r major minor patch <<< "$OLD_VERSION"
@@ -72,6 +73,7 @@ jobs:
           jq --arg newVersion "${{ env.NEW_VERSION }}" '.version = $newVersion' package.json > package.json.tmp && mv package.json.tmp package.json
 
       - name: Commit and Tag
+        if: ${{ needs.build.outputs.should_build == 'true' }}
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
