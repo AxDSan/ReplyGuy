@@ -1,6 +1,6 @@
 # 🤖 ReplyGuy
 
-A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with [Plasmo](https://www.plasmo.com/) and powered by [OpenRouter](https://openrouter.ai/).
+A browser extension that adds AI-powered reply capabilities to your 𝕏 experience. Built with [Plasmo](https://www.plasmo.com/) and powered by [OpenRouter](https://openrouter.ai/).
 
 ![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
 
@@ -11,7 +11,7 @@ Support me!
 
 - 🤖 One-click AI-generated replies to posts
 - 🎯 Context-aware responses that maintain conversation flow
-- 🎨 Modern, clean UI that integrates seamlessly with Twitter
+- 🎨 Modern, clean UI that integrates seamlessly with 𝕏
 - 🔄 Real-time post detection and button injection
 - 🎛️ Support for multiple AI models through OpenRouter
 - 🔒 Enterprise-grade API key security
@@ -82,7 +82,7 @@ pnpm build
 
 ## 🎮 Usage
 
-1. Navigate to Twitter/X
+1. Navigate to 𝕏
 2. Look for the 🤖 button next to the reply button on any post
 3. Click the button to generate and submit an AI-powered reply
 4. The extension will automatically generate and post a contextually relevant reply
@@ -121,7 +121,7 @@ replyguy/
 ReplyGuy uses Plasmo's selector monitoring system to ensure reliability:
 
 - Automatic detection of broken selectors
-- Email notifications when Twitter's DOM structure changes
+- Email notifications when 𝕏 DOM structure changes
 - Easy maintenance and updates
 
 ## 📝 License
@@ -134,4 +134,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## ⚠️ Disclaimer
 
-This extension is not affiliated with Twitter/X or OpenRouter. Use it responsibly and in accordance with Twitter's terms of service.
+This extension is not affiliated with 𝕏 or OpenRouter. Use it responsibly and in accordance with 𝕏 terms of service. By using this extension, you agree to release the author and contributors from any issues, problems, or responsibilities that may arise from its use or misuse.
