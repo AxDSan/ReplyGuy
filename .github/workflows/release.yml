@@ -2,11 +2,8 @@ name: Create Release
 
 on:
   push:
-    branches:
-      - main
-      - master
-  release:
-    types: [published]
+    tags:
+      - 'v*'  # Trigger on tags that start with 'v'
   workflow_dispatch:
 
 jobs:
@@ -39,14 +36,23 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-          else
-            echo "TAG=refs/heads/master" >> $GITHUB_ENV
-          fi
+          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Generate Release Notes
+        run: |
+          echo "## Installation Instructions" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "To install the extension, follow these steps:" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "1. Download the `reply-guy-v${{ env.TAG }}-prod.zip` file from the release assets." >> release_notes.txt
+          echo "2. Extract the zip file to a directory of your choice." >> release_notes.txt
+          echo "3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions)." >> release_notes.txt
+          echo "4. Enable 'Developer mode' at the top right corner." >> release_notes.txt
+          echo "5. Click on 'Load unpacked' and select the extracted directory." >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "The extension should now be installed and ready to use." >> release_notes.txt
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -58,7 +64,6 @@ jobs:
           prerelease: false
 
       - name: Upload Build to Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -69,7 +74,6 @@ jobs:
           asset_content_type: application/zip
 
       - name: Upload Installation Instructions to Release
-        if: startsWith(github.ref, 'refs/tags/')
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
