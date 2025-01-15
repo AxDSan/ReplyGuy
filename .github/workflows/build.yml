@@ -52,6 +52,11 @@ jobs:
       - name: Build Production
         run: npm run build:prod
 
+      - name: Set Asset Path
+        id: set_asset_path
+        run: |
+          echo "ASSET_PATH=reply-guy-prod.zip" >> $GITHUB_ENV
+
       - name: Extract Current Version
         id: extract_version
         run: |
@@ -116,6 +121,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: reply-guy-prod.zip
+          asset_path: ${{ env.ASSET_PATH }}
           asset_name: reply-guy-v${{ env.NEW_VERSION }}-prod.zip
           asset_content_type: application/zip
