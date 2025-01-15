@@ -25,7 +25,7 @@ jobs:
         id: check_commits
         run: |
           HAS_FEATURE_COMMITS=false
-          if git log --pretty=format:"%s" -n 1 | grep -E "^(feat:|add:)"; then
+          if git log --pretty=format:"%s" -n 1 | grep -E "^(feat:|add:|new:)"; then
             HAS_FEATURE_COMMITS=true
           fi
           echo "HAS_FEATURE_COMMITS=$HAS_FEATURE_COMMITS" >> $GITHUB_ENV
