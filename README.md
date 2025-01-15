@@ -75,7 +75,7 @@ pnpm build
 ## 🔧 Configuration
 ![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
 
-1. Get your API key from [OpenRouter](https://openrouter.ai/)
+1. Get your API key from [OpenRouter](https://openrouter.ai/settings/keys)
 2. Click the ReplyGuy extension icon in your browser
 3. Enter your OpenRouter API key
 4. Select your preferred AI model
