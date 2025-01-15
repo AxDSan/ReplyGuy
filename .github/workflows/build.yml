@@ -31,7 +31,7 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: |
-          TAG=$(git log -1 --pretty=format:"%s" | grep -oP 'v\d+\.\d+\.\d+')
+          TAG=$(git log -1 --pretty=format:"%s" | grep -oP 'v\d+\.\d+\.\d+' || true)
           if [[ -z "$TAG" ]]; then
             TAG="master"
           fi
