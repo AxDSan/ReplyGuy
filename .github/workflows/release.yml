@@ -44,7 +44,7 @@ jobs:
           echo "" >> release_notes.txt
           echo "To install the extension, follow these steps:" >> release_notes.txt
           echo "" >> release_notes.txt
-          echo "1. Download the `reply-guy-v${{ env.TAG }}-prod.zip` file from the release assets." >> release_notes.txt
+          echo "1. Download the \`reply-guy-v${{ env.TAG }}-prod.zip\` file from the release assets." >> release_notes.txt
           echo "2. Extract the zip file to a directory of your choice." >> release_notes.txt
           echo "3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions)." >> release_notes.txt
           echo "4. Enable 'Developer mode' at the top right corner." >> release_notes.txt
