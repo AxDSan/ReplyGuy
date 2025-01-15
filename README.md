@@ -2,7 +2,7 @@
 
 A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with [Plasmo](https://www.plasmo.com/) and powered by [OpenRouter](https://openrouter.ai/).
 
-![ReplyGuy](https://i.imgur.com/LZbAgI6.png)
+![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
 
 Support me!
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y8Y7189H2F)
