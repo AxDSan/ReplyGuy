@@ -114,6 +114,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/chrome-mv3-prod.zip
+          asset_path: reply-guy-prod.zip
           asset_name: reply-guy-v${{ env.NEW_VERSION }}-prod.zip
           asset_content_type: application/zip
