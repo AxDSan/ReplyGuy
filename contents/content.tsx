@@ -47,6 +47,33 @@ const loadingStyles = {
   cursor: "not-allowed"
 }
 
+function isPostAThread(text: string, postElement: Element): boolean {
+  const threadKeywords = ["thread", "🧵"];
+  // Allow for leading whitespace
+  const threadRegex = /^\s*\d+\/\d+/;
+  const textElement = postElement.querySelector('[data-testid="tweetText"]')
+  let firstSpanText = ""
+  if (textElement) {
+    const firstSpan = textElement.querySelector('span')
+    if (firstSpan) {
+      firstSpanText = firstSpan.textContent || ""
+    }
+  }
+  console.log("Checking if post is a thread:", firstSpanText)
+
+  if (threadKeywords.some(keyword => text.toLowerCase().includes(keyword))) {
+    console.log("Thread keyword found:", text)
+    return true;
+  }
+
+  if (threadRegex.test(firstSpanText)) {
+      console.log("Thread regex match found:", firstSpanText)
+    return true;
+  }
+    console.log("No thread found:", firstSpanText)
+  return false;
+}
+
 async function generateReply(post: Post) {
   try {
     const apiKey = await storage.get("openRouterApiKey")
@@ -60,6 +87,18 @@ async function generateReply(post: Post) {
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
       throw new Error("Extension context invalidated")
+    }
+
+    const isThread = isPostAThread(post.text, document.querySelector(`[aria-labelledby="${post.id}"]`))
+    let systemPrompt =
+      "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation."
+
+    let userPrompt = `Generate a brief, casual reply to this post "${post.text}". Keep it natural and conversational, as if you're just another person on the platform.`
+
+    if (isThread) {
+      systemPrompt =
+        "You are a casual social media user engaging in a thread. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation. Make sure to acknowledge the thread context."
+      userPrompt = `Generate a brief, casual reply to this post "${post.text}", within the context of a thread. Keep it natural and conversational, as if you're just another person on the platform.`
     }
 
     const response = await fetch(
@@ -76,12 +115,11 @@ async function generateReply(post: Post) {
           messages: [
             {
               role: "system",
-              content:
-                "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation."
+              content: systemPrompt
             },
             {
               role: "user",
-              content: `Generate a brief, casual reply to this post "${post.text}". Keep it natural and conversational, as if you're just another person on the platform.`
+              content: userPrompt
             }
           ]
         })
@@ -235,65 +273,48 @@ async function handleReplyClick(postElement: Element) {
 }
 
 async function addReplyGuyButton(postElement: Element) {
-  console.log("Attempting to add ReplyGuy button to post", postElement)
+  // Add a small delay to allow for rendering
+  await new Promise((resolve) => setTimeout(resolve, 100));
 
-  // Find the actions group (where reply, retweet, like buttons are)
-  // Use a more specific selector to ensure we get the correct actions group for this post
-  const actionsGroup = postElement.querySelector('[role="group"][id*="id__"]')
-  if (!actionsGroup) {
-    console.log("Could not find actions group for post")
-    return
-  }
-  console.log("Found actions group", actionsGroup)
-
-  // Check if button already exists in this specific actions group
-  const existingButton = actionsGroup.querySelector(".replyguy-button")
-  if (existingButton) {
-    console.log("Button already exists in this actions group")
+  // Directly use postElement as the tweet container
+  const tweetActions = postElement.querySelector(
+    '[role="group"][aria-label="Tweet actions"]'
+  )
+  if (!tweetActions) {
+    console.log("Could not find tweet actions", postElement)
     return
   }
 
-  // Create button container to match Twitter's structure
-  const buttonContainer = document.createElement("div")
-  buttonContainer.className = "css-175oi2r r-18u37iz r-1h0z5md r-13awgt0"
-  buttonContainer.style.position = "relative"
-  buttonContainer.style.zIndex = "1000"
-  buttonContainer.setAttribute("data-testid", "replyguy-container")
+  // Check if a button already exists
+  if (postElement.querySelector(".replyguy-button")) {
+    console.log("ReplyGuy button already exists", postElement)
+    return
+  }
+
+  const textElement = postElement.querySelector('[data-testid="tweetText"]')
+  const authorElement = postElement.querySelector('[data-testid="User-Name"]')
+
+  if (!textElement || !authorElement) {
+    console.log("Could not find text or author element", postElement)
+    return
+  }
+
+  const post: Post = {
+    id: postElement.getAttribute("aria-labelledby") || "",
+    text: textElement.textContent || "",
+    author: authorElement.textContent || ""
+  }
 
   const button = document.createElement("button")
-  button.className =
-    "replyguy-button css-175oi2r r-1777fci r-bt1l66 r-bztko3 r-lrvibr r-1loqt21 r-1ny4l3l"
+  button.classList.add("replyguy-button")
   Object.assign(button.style, buttonStyles)
+  button.innerHTML = "🤖 Reply"
 
-  button.innerHTML = "🤖"
-
-  // Add hover effects
-  button.addEventListener("mouseover", () => {
-    button.style.backgroundColor = "#00ff9d25"
-    button.style.transform = "scale(1.05)"
-  })
-  button.addEventListener("mouseout", () => {
-    button.style.backgroundColor = "#00ff9d15"
-    button.style.transform = "scale(1)"
-  })
-  button.addEventListener("mousedown", () => {
-    button.style.transform = "scale(0.95)"
-  })
-  button.addEventListener("mouseup", () => {
-    button.style.transform = "scale(1.05)"
+  button.addEventListener("click", async () => {
+    await handleReplyClick(postElement)
   })
 
-  button.addEventListener("click", () => handleReplyClick(postElement))
-
-  buttonContainer.appendChild(button)
-
-  // Insert before the last element (usually the share button)
-  const lastElement = actionsGroup.lastElementChild
-  if (lastElement) {
-    actionsGroup.insertBefore(buttonContainer, lastElement)
-  } else {
-    actionsGroup.appendChild(buttonContainer)
-  }
+  tweetActions.insertBefore(button, tweetActions.firstChild)
 }
 
 async function observePosts() {
