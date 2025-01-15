@@ -149,7 +149,7 @@ jobs:
         id: check_tags
         run: |
           HAS_TAGS=false
-          if git tag --list; then
+          if git tag --list | grep -q "."; then
             HAS_TAGS=true
           fi
           echo "HAS_TAGS=$HAS_TAGS" >> $GITHUB_ENV
