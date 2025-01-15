@@ -256,19 +256,22 @@ jobs:
         uses: actions/github-script@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        if: steps.get_existing_release.outputs.release_id != '' && steps.get_existing_release.outputs.release_id != null
         with:
           script: |
             const { LAST_TAG } = process.env;
-            const { release_id } = core.getMultilineInput('get_existing_release.outputs.release_id');
+            const releaseId = core.getInput('get_existing_release.outputs.release_id');
             const fs = require('fs');
             const releaseNotes = fs.readFileSync('release_notes.txt', 'utf8');
-            await github.rest.repos.updateRelease({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              release_id: release_id,
-              body: `## Installation Instructions\n\nTo install the extension, follow these steps:\n\n1. Download the \`reply-guy-${LAST_TAG}-prod.zip\` file from the release assets.\n2. Extract the zip file to a directory of your choice.\n3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).\n4. Enable 'Developer mode' at the top right corner.\n5. Click on 'Load unpacked' and select the extracted directory.\n\n${releaseNotes}`
-            });
+            if (releaseId) {
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: releaseId,
+                body: `## Installation Instructions\n\nTo install the extension, follow these steps:\n\n1. Download the \`reply-guy-${LAST_TAG}-prod.zip\` file from the release assets.\n2. Extract the zip file to a directory of your choice.\n3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions).\n4. Enable 'Developer mode' at the top right corner.\n5. Click on 'Load unpacked' and select the extracted directory.\n\n${releaseNotes}`
+              });
+            } else {
+              console.log('No existing release to update.');
+            }
 
       - name: Upload Installation Instructions to Existing Release
         uses: actions/upload-release-asset@v1
