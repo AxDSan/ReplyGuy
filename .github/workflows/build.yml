@@ -43,7 +43,11 @@ jobs:
       - name: Check for Feature Commits
         id: check_feature_commits
         run: |
-          FEATURE_COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD | grep -iE "^feat|^add|^new")
+          if [ -z "$LAST_TAG" ]; then
+            FEATURE_COMMITS=$(git log --pretty=format:"%s" HEAD | grep -iE "^feat|^add|^new")
+          else
+            FEATURE_COMMITS=$(git log --pretty=format:"%s" $LAST_TAG..HEAD | grep -iE "^feat|^add|^new")
+          fi
           if [[ -n "$FEATURE_COMMITS" ]]; then
             echo "HAS_FEATURE_COMMITS=true" >> $GITHUB_ENV
           else
