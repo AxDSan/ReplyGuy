@@ -3,7 +3,7 @@ name: Build and Package
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 jobs:
@@ -28,10 +28,50 @@ jobs:
       - name: Extract Tag
         id: extract_tag
         run: |
-          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          echo "TAG=${GITHUB_REF#refs/heads/master}" >> $GITHUB_ENV
+          echo "SHORT_SHA=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+      - name: Generate Release Notes
+        run: |
+          echo "## Installation Instructions" > release_notes.txt
+          echo "" >> release_notes.txt
+          echo "To install the extension, follow these steps:" >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "1. Download the \`reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-prod.zip\` file from the release assets." >> release_notes.txt
+          echo "2. Extract the zip file to a directory of your choice." >> release_notes.txt
+          echo "3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions)." >> release_notes.txt
+          echo "4. Enable 'Developer mode' at the top right corner." >> release_notes.txt
+          echo "5. Click on 'Load unpacked' and select the extracted directory." >> release_notes.txt
+          echo "" >> release_notes.txt
+          echo "The extension should now be installed and ready to use." >> release_notes.txt
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: reply-guy-v${{ env.TAG }}-prod
-          path: build/
+          tag_name: v${{ env.TAG }}-${{ env.SHORT_SHA }}
+          release_name: Release v${{ env.TAG }}-${{ env.SHORT_SHA }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Build to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: build/chrome-mv3-prod.zip
+          asset_name: reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-prod.zip
+          asset_content_type: application/zip
+
+      - name: Upload Installation Instructions to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: release_notes.txt
+          asset_name: reply-guy-v${{ env.TAG }}-${{ env.SHORT_SHA }}-release-notes.txt
+          asset_content_type: text/plain
