@@ -77,7 +77,7 @@ async function generateReply(post: Post) {
             {
               role: "system",
               content:
-                "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate or marketing language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation in everyday coloquial language, keep context of language es, us, in, kr, and reply accordingly."
+                "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation."
             },
             {
               role: "user",
@@ -122,7 +122,9 @@ async function handleReplyClick(postElement: Element) {
     author: authorElement.textContent || ""
   }
 
-  const button = postElement.querySelector(".replyguy-button") as HTMLButtonElement
+  const button = postElement.querySelector(
+    ".replyguy-button"
+  ) as HTMLButtonElement
   if (button) {
     Object.assign(button.style, loadingStyles)
     button.innerHTML = "🤖 Generating..."
@@ -138,7 +140,7 @@ async function handleReplyClick(postElement: Element) {
     if (reply && button) {
       const replyButton = postElement.querySelector('[data-testid="reply"]')
       if (replyButton) {
-        (replyButton as HTMLElement).click()
+        ;(replyButton as HTMLElement).click()
 
         // Wait for reply modal to open and find it
         const modalTimeout = setTimeout(async () => {
@@ -148,7 +150,9 @@ async function handleReplyClick(postElement: Element) {
           }
 
           // Find the most recently opened modal
-          const modals = document.querySelectorAll('[aria-labelledby="modal-header"]')
+          const modals = document.querySelectorAll(
+            '[aria-labelledby="modal-header"]'
+          )
           const modal = modals[modals.length - 1] // Get the last (most recent) modal
           if (!modal) {
             console.error("Could not find reply modal")
@@ -159,13 +163,17 @@ async function handleReplyClick(postElement: Element) {
           const editorRoot = modal.querySelector(".DraftEditor-root")
           if (editorRoot) {
             // Remove placeholder within this modal
-            const placeholder = editorRoot.querySelector(".public-DraftEditorPlaceholder-root")
+            const placeholder = editorRoot.querySelector(
+              ".public-DraftEditorPlaceholder-root"
+            )
             if (placeholder) {
               placeholder.remove()
             }
 
             // Find the contenteditable div within this modal
-            const editor = editorRoot.querySelector('[contenteditable="true"]') as HTMLElement
+            const editor = editorRoot.querySelector(
+              '[contenteditable="true"]'
+            ) as HTMLElement
             if (editor) {
               // Focus the editor first
               editor.focus()
@@ -176,7 +184,9 @@ async function handleReplyClick(postElement: Element) {
               if (firstDiv) {
                 const firstBlock = firstDiv.firstElementChild
                 if (firstBlock) {
-                  const textContainer = firstBlock.querySelector(".public-DraftStyleDefault-block")
+                  const textContainer = firstBlock.querySelector(
+                    ".public-DraftStyleDefault-block"
+                  )
                   if (textContainer) {
                     textContainer.innerHTML = ""
                     textContainer.appendChild(textNode)

@@ -2,116 +2,8 @@ import { useEffect, useState } from "react"
 
 import { Storage } from "@plasmohq/storage"
 
-// Create a secure storage instance
-const storage = new Storage({
-  area: "local", // Use browser's local storage area for better security
-  secretKeyList: ["openRouterApiKey"] // Mark API key for encryption
-})
-
-// Utility function for secure key handling
-async function secureStore(key: string, value: string) {
-  try {
-    // Basic encryption using browser's crypto API
-    const encoder = new TextEncoder()
-    const data = encoder.encode(value)
-
-    // Generate a random salt
-    const salt = crypto.getRandomValues(new Uint8Array(16))
-
-    // Derive a key from the salt
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(chrome.runtime.id || "fallback"), // Use extension ID as base key
-      { name: "PBKDF2" },
-      false,
-      ["deriveKey"]
-    )
-
-    const key = await crypto.subtle.deriveKey(
-      {
-        name: "PBKDF2",
-        salt,
-        iterations: 100000,
-        hash: "SHA-256"
-      },
-      keyMaterial,
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["encrypt"]
-    )
-
-    // Encrypt the value
-    const iv = crypto.getRandomValues(new Uint8Array(12))
-    const encrypted = await crypto.subtle.encrypt(
-      {
-        name: "AES-GCM",
-        iv
-      },
-      key,
-      data
-    )
-
-    // Store the encrypted data with its salt and iv
-    const encryptedData = {
-      data: Array.from(new Uint8Array(encrypted)),
-      salt: Array.from(salt),
-      iv: Array.from(iv)
-    }
-
-    await storage.set(key, JSON.stringify(encryptedData))
-  } catch (error) {
-    console.error("Error storing API key:", error)
-    throw new Error("Failed to securely store API key")
-  }
-}
-
-// Utility function for secure key retrieval
-async function secureRetrieve(key: string): Promise<string | null> {
-  try {
-    const storedData = await storage.get(key)
-    if (!storedData) return null
-
-    const { data, salt, iv } = JSON.parse(storedData)
-
-    // Recreate the key
-    const encoder = new TextEncoder()
-    const keyMaterial = await crypto.subtle.importKey(
-      "raw",
-      encoder.encode(chrome.runtime.id || "fallback"),
-      { name: "PBKDF2" },
-      false,
-      ["deriveKey"]
-    )
-
-    const derivedKey = await crypto.subtle.deriveKey(
-      {
-        name: "PBKDF2",
-        salt: new Uint8Array(salt),
-        iterations: 100000,
-        hash: "SHA-256"
-      },
-      keyMaterial,
-      { name: "AES-GCM", length: 256 },
-      false,
-      ["decrypt"]
-    )
-
-    // Decrypt the data
-    const decrypted = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: new Uint8Array(iv)
-      },
-      derivedKey,
-      new Uint8Array(data)
-    )
-
-    return new TextDecoder().decode(decrypted)
-  } catch (error) {
-    console.error("Error retrieving API key:", error)
-    return null
-  }
-}
+// Create a storage instance
+const storage = new Storage()
 
 interface Model {
   id: string
@@ -291,14 +183,23 @@ function IndexPopup() {
     style.textContent = globalStyles
     document.head.appendChild(style)
 
+    // Load settings
     const loadSettings = async () => {
-      const savedApiKey = await secureRetrieve("openRouterApiKey")
-      const savedEnabled = await storage.get("enabled")
-      const savedModel = await storage.get("selectedModel")
-      if (savedApiKey) setApiKey(savedApiKey)
-      if (savedEnabled) setEnabled(savedEnabled)
-      if (savedModel) setSelectedModel(savedModel)
+      try {
+        const [savedApiKey, savedEnabled, savedModel] = await Promise.all([
+          storage.get("openRouterApiKey"),
+          storage.get("enabled"),
+          storage.get("selectedModel")
+        ])
+
+        if (savedApiKey) setApiKey(savedApiKey)
+        if (savedEnabled) setEnabled(savedEnabled)
+        if (savedModel) setSelectedModel(savedModel)
+      } catch (error) {
+        console.error("Error loading settings:", error)
+      }
     }
+
     loadSettings()
 
     // Cleanup styles on unmount
@@ -347,9 +248,11 @@ function IndexPopup() {
 
   const saveSettings = async () => {
     try {
-      await secureStore("openRouterApiKey", apiKey)
-      await storage.set("enabled", enabled)
-      await storage.set("selectedModel", selectedModel)
+      await Promise.all([
+        storage.set("openRouterApiKey", apiKey),
+        storage.set("enabled", enabled),
+        storage.set("selectedModel", selectedModel)
+      ])
       setStatus("Settings saved successfully!")
       setTimeout(() => setStatus(""), 2000)
     } catch (error) {
