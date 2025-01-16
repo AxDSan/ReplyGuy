@@ -224,10 +224,10 @@ async function generateReply(post: Post) {
 
     // Adjust system prompt based on whether it's a thread
     const systemPrompt = isThread
-      ? "You are a casual Twitter user replying to a thread. Keep it natural - use informal, everyday coloquial language, occasional typos, and short responses. Don't be too formal or polished."
-      : "You are a casual Twitter user. Keep replies short, informal and natural everyday coloquial language. Use common internet slang, emojis occasionally, and don't worry about perfect grammar."
+      ? "You are a casual reply guy replying to a thread. Keep it natural - use informal, everyday coloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏."
+      : "You are a casual reply guy. Keep replies short, informal and natural everyday coloquial language. Use common internet slang, emojis occasionally, and don't worry about perfect grammar. You don't use the term `Twitter` as it's outdated, you use 𝕏."
 
-    const userPrompt = `Very briefly reply to this ${isThread ? "thread" : "tweet"} like a regular person (not too formal):\n\n${context}\n\nREMEMBER DO NOT INCLUDE EVERY LITTLE DETAIL OF THE ${isThread ? "THREAD!" : "POST!"}, simply make a very short summarized statement on the ${isThread ? "thread" : "post"} context and highlight maybe one or two remarks that seems interesting! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"`
+    const userPrompt = `Very briefly reply to this ${isThread ? "thread" : "post"} like a regular person (not too formal, use everyday coloquial english):\n\n${context}\n\nREMEMBER DO NOT INCLUDE EVERY LITTLE DETAIL OF THE ${isThread ? "THREAD!" : "POST!"}, simply make a very short summarized statement on the ${isThread ? "thread" : "post"}, ALWAYS address the post in first person, context and highlight maybe one or two remarks that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nAn INCORRECT reply would be ie. "Dr. Steven Greer is talking about..." A CORRECT reply would be ie. "Whoa! the thing you were talking about is really..."`
 
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {

@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_build: ${{ steps.check_commits.outputs.should_build }}
+      bump_type: ${{ steps.check_commits.outputs.bump_type }}
 
     steps:
       - name: Checkout Repository
@@ -21,15 +22,39 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for Feature Commits
+      - name: Check for Version Bump Type
         id: check_commits
         run: |
-          HAS_FEATURE_COMMITS=false
-          if git log --pretty=format:"%s" -n 1 | grep -E "^(feat:|add:|new:)"; then
-            HAS_FEATURE_COMMITS=true
+          BUMP_TYPE="patch"
+          SHOULD_BUILD=false
+          CHANGELOG=""
+
+          # Check last commit message for version bump indicators
+          COMMIT_MSG=$(git log --pretty=format:"%s" -n 1)
+
+          if echo "$COMMIT_MSG" | grep -E "^(feat:|new:)"; then
+            BUMP_TYPE="minor"
+            SHOULD_BUILD=true
+          elif echo "$COMMIT_MSG" | grep -E "^(fix:|patch:)"; then
+            BUMP_TYPE="patch"
+            SHOULD_BUILD=true
+          elif echo "$COMMIT_MSG" | grep -E "^(BREAKING CHANGE:|major:)"; then
+            BUMP_TYPE="major"
+            SHOULD_BUILD=true
           fi
-          echo "HAS_FEATURE_COMMITS=$HAS_FEATURE_COMMITS" >> $GITHUB_ENV
-          echo "should_build=$HAS_FEATURE_COMMITS" >> $GITHUB_OUTPUT
+
+          # Generate changelog from commits since last tag
+          while read -r line; do
+            if echo "$line" | grep -E "^(feat|new|fix|patch|BREAKING CHANGE|major):"; then
+              CHANGELOG="$CHANGELOG\n- $line"
+            fi
+          done < <(git log $(git describe --tags --abbrev=0)..HEAD --pretty=format:"%s")
+
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+          echo "should_build=$SHOULD_BUILD" >> $GITHUB_OUTPUT
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   build_and_release:
     needs: build
@@ -44,7 +69,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: "16"
 
       - name: Install Dependencies
         run: npm install
@@ -57,23 +82,31 @@ jobs:
         run: |
           echo "ASSET_PATH=build/reply-guy-prod.zip" >> $GITHUB_ENV
 
-      - name: List Files
-        run: ls -la
-
       - name: Extract Current Version
         id: extract_version
         run: |
           CURRENT_VERSION=$(jq -r .version package.json)
           echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
-      - name: Increment Version
-        id: increment_version
+      - name: Generate New Version
+        id: generate_version
         if: ${{ needs.build.outputs.should_build == 'true' }}
         run: |
           OLD_VERSION="${{ env.CURRENT_VERSION }}"
           IFS='.' read -r major minor patch <<< "$OLD_VERSION"
-          NEW_PATCH=$((patch + 1))
-          NEW_VERSION="$major.$minor.$NEW_PATCH"
+
+          case "${{ needs.build.outputs.bump_type }}" in
+            "major")
+              NEW_VERSION="$((major + 1)).0.0"
+              ;;
+            "minor")
+              NEW_VERSION="$major.$((minor + 1)).0"
+              ;;
+            *)
+              NEW_VERSION="$major.$minor.$((patch + 1))"
+              ;;
+          esac
+
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Set Default Version
@@ -107,6 +140,16 @@ jobs:
           draft: false
           prerelease: false
           body: |
+            ## What's Changed in v${{ env.NEW_VERSION }}
+
+            ${{ steps.check_commits.outputs.changelog }}
+
+            ## Latest Changes
+            - 🎯 Improved thread detection using timeline type
+            - 🤖 Enhanced natural language responses
+            - 🔄 Better handling of conversation context
+            - 🐛 Fixed reply button visibility issues
+
             ## Installation Instructions
 
             To install the extension, follow these steps:
