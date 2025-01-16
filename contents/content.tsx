@@ -1,11 +1,11 @@
 import { useEffect } from "react"
 
-import type { PlasmoContentScript } from "@plasmohq/messaging"
+import type { PlasmoCSConfig } from "@plasmohq/messaging"
 import { querySelector } from "@plasmohq/selector"
 import { Storage } from "@plasmohq/storage"
 import Swal from 'sweetalert2'
 
-export const config: PlasmoContentScript = {
+export const config: PlasmoCSConfig = {
   matches: ["https://twitter.com/*", "https://x.com/*"],
   all_frames: true
 }
@@ -49,28 +49,18 @@ const loadingStyles = {
 }
 
 function isPostAThread(text: string, postElement: Element): boolean {
-  console.log("Checking if post is a thread. Post element:", postElement)
-
   try {
-    // Find the timeline type
     const timeline = document.querySelector('main[role="main"]')
     const timelineLabel = timeline?.getAttribute("aria-label")
-    console.log("Timeline type:", timelineLabel)
 
-    // If we're in a conversation timeline, it's a thread
     if (timelineLabel?.includes("Timeline: Conversation")) {
-      console.log("Thread detected - in Conversation timeline")
       return true
     }
 
-    // If we're in home timeline, it's a single post
     if (timelineLabel?.includes("Timeline: Your Home Timeline")) {
-      console.log("Single post detected - in Home timeline")
       return false
     }
 
-    // Fallback to previous detection logic if timeline type is unknown
-    // Check for thread indicators in text
     const threadKeywords = [
       "thread",
       "🧵",
@@ -85,17 +75,14 @@ function isPostAThread(text: string, postElement: Element): boolean {
       "start of thread"
     ]
 
-    // Enhanced regex to catch more thread formats
     const threadRegex =
       /^\s*(?:(\d+)\/(\d+)|(\d+)\.\s|\((\d+)\/(\d+)\)|\[(\d+)\/(\d+)\])/i
 
-    // Get the text content with better error handling
     const textElement = postElement.querySelector('[data-testid="tweetText"]')
     let firstSpanText = ""
     let fullText = text || ""
 
     if (textElement) {
-      // Get all spans to check for thread indicators
       const spans = textElement.querySelectorAll("span")
       spans.forEach((span) => {
         const spanText = span.textContent || ""
@@ -104,22 +91,14 @@ function isPostAThread(text: string, postElement: Element): boolean {
         }
       })
 
-      // Get full text content
       fullText = textElement.textContent || text
     }
 
-    // Log findings
-    const findings = {
-      keywords: threadKeywords.some((keyword) =>
-        fullText.toLowerCase().includes(keyword)
-      ),
-      regexMatch: threadRegex.test(firstSpanText),
-      fullText
-    }
-    console.log("Thread detection findings:", findings)
+    const hasThreadIndicators = 
+      threadKeywords.some((keyword) => fullText.toLowerCase().includes(keyword)) ||
+      threadRegex.test(firstSpanText)
 
-    // Return true if any thread indicator is found
-    return findings.keywords || findings.regexMatch
+    return hasThreadIndicators
   } catch (error) {
     console.error("Error in thread detection:", error)
     return false
@@ -128,11 +107,9 @@ function isPostAThread(text: string, postElement: Element): boolean {
 
 async function getThreadContext(postElement: Element): Promise<string> {
   try {
-    // Get the current post text
     const textElement = postElement.querySelector('[data-testid="tweetText"]')
     const currentText = textElement?.textContent || ""
 
-    // Try to find "Show this thread" button and click it
     const threadButtons = Array.from(
       postElement.querySelectorAll("span")
     ).filter((span) =>
@@ -140,42 +117,32 @@ async function getThreadContext(postElement: Element): Promise<string> {
     )
 
     if (threadButtons.length > 0) {
-      // Click the button to expand thread
       const button = threadButtons[0].closest(
         'div[role="button"]'
       ) as HTMLElement
       if (button) {
         button.click()
 
-        // Wait for thread to load with retries
         let retries = 0
         const maxRetries = 3
 
         while (retries < maxRetries) {
           await new Promise((resolve) => setTimeout(resolve, 1000))
-
-          // Check if thread has loaded by looking for multiple posts
           const threadPosts = document.querySelectorAll(
             'article[role="article"]'
           )
           if (threadPosts.length > 1) {
             break
           }
-
           retries++
-          if (retries === maxRetries) {
-            console.warn("Thread expansion timed out after retries")
-          }
         }
       }
     }
 
-    // Get all posts in the thread
     const threadPosts = document.querySelectorAll('article[role="article"]')
     let threadContext = ""
-    let seenTexts = new Set() // To avoid duplicates
+    let seenTexts = new Set()
 
-    // Collect text from all posts
     threadPosts.forEach((post) => {
       const postText =
         post.querySelector('[data-testid="tweetText"]')?.textContent || ""
@@ -185,23 +152,21 @@ async function getThreadContext(postElement: Element): Promise<string> {
       }
     })
 
-    // If we couldn't get thread context, fall back to current post
     if (!threadContext.trim()) {
-      console.warn("Could not get thread context, falling back to current post")
+      console.warn("Thread context not found, using single post")
       return currentText
     }
 
     return threadContext
   } catch (error) {
     console.error("Error getting thread context:", error)
-    // Fall back to current post text on error
     return (
       postElement.querySelector('[data-testid="tweetText"]')?.textContent || ""
     )
   }
 }
 
-async function generateReply(post: Post) {
+async function generateReply(post: Post, postElement: Element) {
   try {
     const apiKey = await storage.get("openRouterApiKey")
     const selectedModel = await storage.get("selectedModel")
@@ -221,16 +186,20 @@ async function generateReply(post: Post) {
     }
 
     const isThread = isPostAThread(post.text, postElement)
-    let systemPrompt =
-      "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation."
+    const systemPrompt = isThread
+      ? "You are a casual reply guy replying to a thread. Keep it natural - use informal, everyday coloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
+      : "You are a casual reply guy. Keep replies short, informal and natural everyday coloquial language. Use common internet slang, emojis occasionally, and don't worry about perfect grammar. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
 
-    let userPrompt = `Generate a brief, casual reply to this post "${post.text}". Keep it natural and conversational, as if you're just another person on the platform.`
-
+    let userPrompt = `Very briefly reply to this ${isThread ? "thread" : "post"} like a regular person (use everyday coloquial english):\n\n${post.text}\n\nSimply make a very short summarized statement on the ${isThread ? "thread" : "post"}, ALWAYS address the post in first person, context and highlight a couple of remarks that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nAn INCORRECT reply would be ie. "Dr. Steven Greer is talking about..." A CORRECT reply would be ie. "Whoa! the thing you were talking about is really..."\n\n`
+    
     if (isThread) {
-      systemPrompt =
-        "You are a casual social media user engaging in a thread. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation. Make sure to acknowledge the thread context."
-      userPrompt = `Generate a brief, casual reply to this post "${post.text}", within the context of a thread. Keep it natural and conversational, as if you're just another person on the platform.`
+      const threadContext = await getThreadContext(postElement)
+      userPrompt += `${threadContext}\n\n`
+    } else {
+      userPrompt += `${post.text}\n\n`
     }
+
+    userPrompt += `REMEMBER DO NOT INCLUDE EVERY LITTLE DETAIL OF THE ${isThread ? "THREAD!" : "POST!"}, simply make a very short summarized statement on the ${isThread ? "thread" : "post"}, ALWAYS address the post in first person, context and highlight maybe one or two remarks that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nAn INCORRECT reply would be ie. "Dr. Steven Greer is talking about..." A CORRECT reply would be ie. "Whoa! the thing you were talking about is really..."`
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -240,7 +209,16 @@ async function generateReply(post: Post) {
       },
       body: JSON.stringify({
         model: selectedModel || "mistralai/mistral-7b-instruct",
-        prompt: `${systemPrompt}\n\n${userPrompt}`,
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt
+          },
+          {
+            role: "user",
+            content: userPrompt
+          }
+        ],
         max_tokens: 150
       })
     })
@@ -256,7 +234,11 @@ async function generateReply(post: Post) {
     }
 
     const data = await response.json()
+    if (!data?.choices?.[0]?.message?.content) {
+      throw new Error('Invalid response format from API')
+    }
     return data.choices[0].message.content
+
   } catch (error: any) {
     console.error("Error generating reply:", error)
     Swal.fire({
@@ -296,7 +278,18 @@ async function handleReplyClick(postElement: Element) {
   }
 
   try {
-    const reply = await generateReply(post)
+    // Get thread context first if it's a thread
+    const isThread = isPostAThread(post.text, postElement)
+    if (isThread) {
+      console.log("Detected thread, getting context...")
+      const threadContext = await getThreadContext(postElement)
+      post.text = threadContext // Replace post text with full thread context
+      console.log("Thread Context:", threadContext)
+    }
+
+    // Now generate reply with the complete context
+    const reply = await generateReply(post, postElement)
+    
     if (!chrome.runtime?.id) {
       throw new Error("Extension context invalidated")
     }
@@ -401,68 +394,80 @@ async function handleReplyClick(postElement: Element) {
 async function addReplyGuyButton(postElement: Element) {
   console.log("Attempting to add ReplyGuy button to:", postElement)
 
-  // Add a small delay to allow for rendering
-  await new Promise((resolve) => setTimeout(resolve, 500)) // Increased delay
+  // Function to find tweet actions
+  const findTweetActions = async (maxAttempts = 5): Promise<Element | null> => {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Wait between attempts
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
+      // Updated selectors based on X/Twitter's current structure
+      const actionSelectors = [
+        '[data-testid="tweetButtonInline"]',  // Try to find the inline actions first
+        '[data-testid="tweet"] [role="group"]',
+        '[data-testid="tweetButtonInline"] [role="group"]',
+        '[data-testid="tweetActionBar"]',
+        '[data-testid="reply"]'  // If we can find the reply button, we can find its parent
+      ]
 
-  // Try multiple selectors for tweet actions
-  const actionSelectors = [
-    '[role="group"][aria-label="Tweet actions"]',
-    '[role="group"][aria-label*="actions"]',
-    '[role="group"]'
-  ]
-
-  let tweetActions = null
-  for (const selector of actionSelectors) {
-    tweetActions = postElement.querySelector(selector)
-    if (tweetActions) {
-      console.log("Found tweet actions with selector:", selector)
-      break
+      for (const selector of actionSelectors) {
+        const element = postElement.querySelector(selector)
+        if (element) {
+          // If we found the reply button, get its parent group
+          if (selector === '[data-testid="reply"]') {
+            return element.closest('[role="group"]') || element.parentElement
+          }
+          return element
+        }
+      }
+      
+      console.log(`Attempt ${attempt + 1}: Waiting for tweet actions to load...`)
     }
+    return null
   }
-
-  if (!tweetActions) {
-    console.error(
-      "Could not find tweet actions. Available elements:",
-      postElement.innerHTML
-    )
-    return
-  }
-
-  // Check if a button already exists
-  if (postElement.querySelector(".replyguy-button")) {
-    console.log("ReplyGuy button already exists")
-    return
-  }
-
-  const textElement = postElement.querySelector('[data-testid="tweetText"]')
-  const authorElement = postElement.querySelector('[data-testid="User-Name"]')
-
-  if (!textElement || !authorElement) {
-    console.error("Missing required elements:", {
-      hasText: !!textElement,
-      hasAuthor: !!authorElement
-    })
-    return
-  }
-
-  const post: Post = {
-    id: postElement.getAttribute("aria-labelledby") || "",
-    text: textElement.textContent || "",
-    author: authorElement.textContent || ""
-  }
-
-  console.log("Creating button for post:", post)
-
-  const button = document.createElement("button")
-  button.classList.add("replyguy-button")
-  Object.assign(button.style, buttonStyles)
-  button.innerHTML = "🤖"
-
-  button.addEventListener("click", async () => {
-    await handleReplyClick(postElement)
-  })
 
   try {
+    const tweetActions = await findTweetActions()
+    
+    if (!tweetActions) {
+      console.error("Could not find tweet actions after multiple attempts. Post HTML:", postElement.innerHTML)
+      return
+    }
+
+    // Check if a button already exists
+    if (postElement.querySelector(".replyguy-button")) {
+      console.log("ReplyGuy button already exists")
+      return
+    }
+
+    const textElement = postElement.querySelector('[data-testid="tweetText"]')
+    const authorElement = postElement.querySelector('[data-testid="User-Name"]')
+
+    if (!textElement || !authorElement) {
+      console.error("Missing required elements:", {
+        hasText: !!textElement,
+        hasAuthor: !!authorElement
+      })
+      return
+    }
+
+    const post: Post = {
+      id: postElement.getAttribute("aria-labelledby") || "",
+      text: textElement.textContent || "",
+      author: authorElement.textContent || ""
+    }
+
+    console.log("Creating button for post:", post)
+
+    const button = document.createElement("button")
+    button.classList.add("replyguy-button")
+    Object.assign(button.style, buttonStyles)
+    button.innerHTML = "🤖"
+
+    button.addEventListener("click", async () => {
+      await handleReplyClick(postElement)
+    })
+
+    // Insert the button in the tweet actions area
     tweetActions.insertBefore(button, tweetActions.firstChild)
     console.log("Successfully added ReplyGuy button")
   } catch (error) {
@@ -473,15 +478,16 @@ async function addReplyGuyButton(postElement: Element) {
 async function observePosts() {
   console.log("Setting up post observer")
 
+  let observerTimeout: NodeJS.Timeout | null = null;
+
   const observer = new MutationObserver(async (mutations) => {
-    console.log("Mutation observed", mutations.length, "changes")
 
     // Debounce the processing of mutations
-    if (observer.timeout) {
-      clearTimeout(observer.timeout)
+    if (observerTimeout) {
+      clearTimeout(observerTimeout)
     }
 
-    observer.timeout = setTimeout(async () => {
+    observerTimeout = setTimeout(async () => {
       console.log("Processing mutations")
       // Find all articles, even if deeply nested
       const allPosts = document.querySelectorAll('article[role="article"]')
@@ -534,8 +540,8 @@ async function observePosts() {
   }
 
   return () => {
-    if (observer.timeout) {
-      clearTimeout(observer.timeout)
+    if (observerTimeout) {
+      clearTimeout(observerTimeout)
     }
     observer.disconnect()
   }
