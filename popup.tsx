@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-
+import { HashRouter as Router, Routes, Route, useNavigate } from "react-router-dom"
 import { Storage } from "@plasmohq/storage"
 import Swal from 'sweetalert2'
 
@@ -186,7 +186,449 @@ function ModelCard({
   )
 }
 
+function Privacy() {
+  const navigate = useNavigate();
+  
+  return (
+    <div style={{ 
+      padding: "20px", 
+      color: theme.colors.text,
+      maxHeight: "600px",
+      overflowY: "auto"
+    }}>
+      <button 
+        onClick={() => navigate('/')}
+        style={{
+          backgroundColor: "transparent",
+          color: theme.colors.primary,
+          padding: "8px 16px",
+          borderRadius: "20px",
+          border: `1px solid ${theme.colors.primary}`,
+          cursor: "pointer",
+          marginBottom: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "14px",
+          transition: "all 0.2s ease",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}>
+        <span>←</span> Back to Settings
+      </button>
+
+      <h1 style={{ 
+        color: theme.colors.primary,
+        fontSize: "24px",
+        marginBottom: "24px",
+        background: `linear-gradient(45deg, ${theme.colors.primary}, #4ade80)`,
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        textShadow: `0 0 20px ${theme.colors.primary}40`
+      }}>
+        Privacy Policy
+      </h1>
+
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "24px"
+      }}>
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>Introduction</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            ReplyGuy ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your information when you use our browser extension.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>Information We Collect</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            We collect the following types of information:
+          </p>
+          <ul style={{ 
+            listStyleType: "disc",
+            paddingLeft: "20px",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            <li>Your OpenRouter API key (stored locally)</li>
+            <li>Post content that you choose to interact with</li>
+            <li>Generated replies (not stored, only transmitted)</li>
+          </ul>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>How We Use Your Information</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            We use the collected information for:
+          </p>
+          <ul style={{ 
+            listStyleType: "disc",
+            paddingLeft: "20px",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            <li>Generating contextual replies to posts</li>
+            <li>Improving the extension's functionality</li>
+            <li>Ensuring proper operation of the service</li>
+          </ul>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>Data Storage</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            All sensitive data, including your API key, is stored locally on your device. We do not maintain any central database of user information.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>Third-Party Services</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            We use the following third-party services:
+          </p>
+          <ul style={{ 
+            listStyleType: "disc",
+            paddingLeft: "20px",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            <li>OpenRouter API for generating replies</li>
+            <li>X (formerly Twitter) platform for interaction</li>
+          </ul>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>Contact Us</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            If you have any questions about this Privacy Policy, replyguy@0x90.33mail.com
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Terms() {
+  const navigate = useNavigate();
+  
+  return (
+    <div style={{ 
+      padding: "20px", 
+      color: theme.colors.text,
+      maxHeight: "600px",
+      overflowY: "auto"
+    }}>
+      <button 
+        onClick={() => navigate('/')}
+        style={{
+          backgroundColor: "transparent",
+          color: theme.colors.primary,
+          padding: "8px 16px",
+          borderRadius: "20px",
+          border: `1px solid ${theme.colors.primary}`,
+          cursor: "pointer",
+          marginBottom: "20px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          fontSize: "14px",
+          transition: "all 0.2s ease",
+          position: "sticky",
+          top: 0,
+          zIndex: 10,
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+        }}>
+        <span>←</span> Back to Settings
+      </button>
+
+      <h1 style={{ 
+        color: theme.colors.primary,
+        fontSize: "24px",
+        marginBottom: "24px",
+        background: `linear-gradient(45deg, ${theme.colors.primary}, #4ade80)`,
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        textShadow: `0 0 20px ${theme.colors.primary}40`
+      }}>
+        Terms of Service
+      </h1>
+
+      <div style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "24px"
+      }}>
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>1. Acceptance of Terms</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            By installing and using the ReplyGuy browser extension ("Service"), you agree to be bound by these Terms of Service ("Terms"). If you disagree with any part of the terms, you may not use our Service.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>2. Description of Service</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            ReplyGuy is a browser extension that helps users generate contextual replies to posts on X (formerly Twitter) using AI technology.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>3. User Responsibilities</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            You are responsible for:
+          </p>
+          <ul style={{ 
+            listStyleType: "disc",
+            paddingLeft: "20px",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            <li>Providing your own OpenRouter API key</li>
+            <li>Using the service in compliance with X's terms of service</li>
+            <li>Any content you generate and post using our service</li>
+            <li>Maintaining the security of your API keys and account</li>
+          </ul>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>4. Limitations of Use</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            You agree not to use the Service to:
+          </p>
+          <ul style={{ 
+            listStyleType: "disc",
+            paddingLeft: "20px",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            <li>Generate spam or harmful content</li>
+            <li>Violate X's terms of service</li>
+            <li>Engage in harassment or abusive behavior</li>
+            <li>Generate content that infringes on others' rights</li>
+          </ul>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>5. Disclaimer of Warranties</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            The Service is provided "as is" without any warranties, expressed or implied. We do not guarantee that the Service will always function without interruption or errors.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>6. Limitation of Liability</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            We shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>7. Changes to Terms</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            We reserve the right to modify these terms at any time. We will notify users of any material changes to these terms.
+          </p>
+        </div>
+
+        <div style={{
+          backgroundColor: theme.colors.cardBg,
+          padding: "20px",
+          borderRadius: "12px",
+          border: `1px solid ${theme.colors.border}`
+        }}>
+          <h2 style={{ 
+            color: theme.colors.primary,
+            fontSize: "18px",
+            marginBottom: "12px"
+          }}>8. Contact Information</h2>
+          <p style={{ 
+            lineHeight: "1.6",
+            color: theme.colors.textMuted,
+            fontSize: "14px"
+          }}>
+            For any questions regarding these Terms, replyguy@0x90.33mail.com
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function SettingsCard() {
+  const navigate = useNavigate();
   const [apiKey, setApiKey] = useState("")
   const [selectedModel, setSelectedModel] = useState("")
   const [enabled, setEnabled] = useState(false)
@@ -457,13 +899,60 @@ function SettingsCard() {
         </div>
 
         <div>
-          <a href="/privacy" style={{ color: theme.colors.primary, marginRight: 12 }}>Privacy Policy</a>
-          <a href="/terms" style={{ color: theme.colors.primary, marginRight: 12 }}>Terms of Service</a>
-          <a href="https://github.com/axdsan/replyguy" target="_blank" rel="noopener noreferrer" style={{ color: theme.colors.primary }}>GitHub</a>
+          <button 
+            onClick={() => navigate('/privacy')} 
+            style={{ 
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: theme.colors.primary, 
+              marginRight: 12,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontSize: 'inherit'
+            }}>
+            Privacy Policy
+          </button>
+          <button 
+            onClick={() => navigate('/terms')} 
+            style={{ 
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              color: theme.colors.primary, 
+              marginRight: 12,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontSize: 'inherit'
+            }}>
+            Terms of Service
+          </button>
+          <a 
+            href="https://github.com/axdsan/replyguy" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{ color: theme.colors.primary }}>
+            GitHub
+          </a>
         </div>
       </div>
     </div>
   )
 }
 
-export default SettingsCard
+function App() {
+  return (
+    <Router>
+      <div style={{ minWidth: "320px", minHeight: "400px" }}>
+        <style>{globalStyles}</style>
+        <Routes>
+          <Route path="/" element={<SettingsCard />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+        </Routes>
+      </div>
+    </Router>
+  )
+}
+
+export default App
