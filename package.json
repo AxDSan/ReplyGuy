@@ -1,7 +1,7 @@
 {
   "name": "replyguy",
   "displayName": "ReplyGuy",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "description": "A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with Plasmo and powered by OpenRouter.",
   "author": "@abdiisan",
   "scripts": {
@@ -17,7 +17,8 @@
     "@plasmohq/storage": "^1.13.0",
     "plasmo": "0.89.4",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "sweetalert2": "^11.15.10"
   },
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "4.1.1",

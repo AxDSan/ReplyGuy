@@ -3,6 +3,7 @@ import { useEffect } from "react"
 import type { PlasmoContentScript } from "@plasmohq/messaging"
 import { querySelector } from "@plasmohq/selector"
 import { Storage } from "@plasmohq/storage"
+import Swal from 'sweetalert2'
 
 export const config: PlasmoContentScript = {
   matches: ["https://twitter.com/*", "https://x.com/*"],
@@ -206,71 +207,63 @@ async function generateReply(post: Post) {
     const selectedModel = await storage.get("selectedModel")
 
     if (!apiKey) {
-      alert("Please set your OpenRouter API key in the extension settings")
+      Swal.fire({
+        icon: 'warning',
+        title: 'API Key Required',
+        text: 'Please set your OpenRouter API key in the extension settings.',
+      })
       return null
     }
-
-    // Check if post is a thread
-    const postElement = document.querySelector(
-      `[aria-labelledby*="${post.id}"]`
-    )
-    const isThread = postElement ? isPostAThread(post.text, postElement) : false
-
-    // Get appropriate context
-    let context = post.text
-    if (isThread && postElement) {
-      context = await getThreadContext(postElement)
-    }
-
-    // Adjust system prompt based on whether it's a thread
-    const systemPrompt = isThread
-      ? "You are a casual reply guy replying to a thread. Keep it natural - use informal, everyday coloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏."
-      : "You are a casual reply guy. Keep replies short, informal and natural everyday coloquial language. Use common internet slang, emojis occasionally, and don't worry about perfect grammar. You don't use the term `Twitter` as it's outdated, you use 𝕏."
-
-    const userPrompt = `Very briefly reply to this ${isThread ? "thread" : "post"} like a regular person (not too formal, use everyday coloquial english):\n\n${context}\n\nREMEMBER DO NOT INCLUDE EVERY LITTLE DETAIL OF THE ${isThread ? "THREAD!" : "POST!"}, simply make a very short summarized statement on the ${isThread ? "thread" : "post"}, ALWAYS address the post in first person, context and highlight maybe one or two remarks that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nAn INCORRECT reply would be ie. "Dr. Steven Greer is talking about..." A CORRECT reply would be ie. "Whoa! the thing you were talking about is really..."`
 
     // Check if extension context is still valid
     if (!chrome.runtime?.id) {
       throw new Error("Extension context invalidated")
     }
 
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-          "HTTP-Referer": "ReplyGuy"
-        },
-        body: JSON.stringify({
-          model: selectedModel || "microsoft/phi-4", // Fallback to default model
-          messages: [
-            {
-              role: "system",
-              content: systemPrompt
-            },
-            {
-              role: "user",
-              content: userPrompt
-            }
-          ]
-        })
-      }
-    )
+    const isThread = isPostAThread(post.text, postElement)
+    let systemPrompt =
+      "You are a casual social media user. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation."
+
+    let userPrompt = `Generate a brief, casual reply to this post "${post.text}". Keep it natural and conversational, as if you're just another person on the platform.`
+
+    if (isThread) {
+      systemPrompt =
+        "You are a casual social media user engaging in a thread. Keep responses short, informal, and natural. Avoid corporate language, excessive enthusiasm, or marketing speak. Don't use hashtags unless specifically relevant. Occasionally use lowercase, simple punctuation, and brief responses. Don't overuse emojis - one at most. Never use exclamation points more than once. Avoid buzzwords and clichés. Write like a real person having a quick conversation. Make sure to acknowledge the thread context."
+      userPrompt = `Generate a brief, casual reply to this post "${post.text}", within the context of a thread. Keep it natural and conversational, as if you're just another person on the platform.`
+    }
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: selectedModel || "mistralai/mistral-7b-instruct",
+        prompt: `${systemPrompt}\n\n${userPrompt}`,
+        max_tokens: 150
+      })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      Swal.fire({
+        icon: 'error',
+        title: 'Error generating reply',
+        text: errorData.error?.message || 'Something went wrong.',
+      })
+      return null
+    }
 
     const data = await response.json()
-    const reply = data.choices[0]?.message?.content
-
-    // Sanitize the reply by removing all quotation marks
-    return reply ? reply.replace(/["']/g, "") : null
-  } catch (error) {
-    if (error.message === "Extension context invalidated") {
-      alert("Extension was reloaded. Please try again.")
-    } else {
-      console.error("Error in generateReply:", error)
-      alert("Failed to generate reply. Please try again.")
-    }
+    return data.choices[0].message.content
+  } catch (error: any) {
+    console.error("Error generating reply:", error)
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: error.message || 'An unexpected error occurred.',
+    })
     return null
   }
 }
