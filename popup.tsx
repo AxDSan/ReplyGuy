@@ -716,7 +716,7 @@ function SettingsCard() {
         animation: "glow 2s ease-in-out infinite alternate, gradient 3s linear infinite",
         textShadow: `0 0 20px ${theme.colors.primary}40`
       }}>
-        <span style={{ fontSize: 18, fontWeight: 700 }}>ReplyGuy <span style={{ fontSize: 10, fontWeight: 700 }}>v0.2.0</span></span>
+        <span style={{ fontSize: 22}}>ReplyGuy <span style={{ fontSize: 10}}>v0.5.0</span></span>
       </div>
 
       <style>{`
