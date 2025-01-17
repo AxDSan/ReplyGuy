@@ -16,6 +16,7 @@ interface Post {
   id: string
   text: string
   author: string
+  replies?: string[] // Added to store replies
 }
 
 // Styles for the ReplyGuy button
@@ -48,64 +49,36 @@ const loadingStyles = {
   cursor: "not-allowed"
 }
 
-function isPostAThread(text: string, postElement: Element): boolean {
+// Enhanced function to detect if a post is part of a conversation
+function isPostInConversation(postElement: Element): boolean {
   try {
-    const timeline = document.querySelector('main[role="main"]')
-    const timelineLabel = timeline?.getAttribute("aria-label")
+    // Check for "show this thread" button
+    const threadButtons = Array.from(
+      postElement.querySelectorAll("span")
+    ).filter((span) =>
+      span.textContent?.toLowerCase().includes("show this thread")
+    )
 
-    if (timelineLabel?.includes("Timeline: Conversation")) {
+    if (threadButtons.length > 0) {
       return true
     }
 
-    if (timelineLabel?.includes("Timeline: Your Home Timeline")) {
-      return false
+    // Check for replies to the post
+    const replyElements = postElement.querySelectorAll('[data-testid="reply"]')
+    if (replyElements.length > 0) {
+      return true
     }
 
-    const threadKeywords = [
-      "thread",
-      "🧵",
-      "1/",
-      "1.",
-      "part 1",
-      "thread:",
-      "a thread",
-      "(1/",
-      "1)",
-      "beginning a thread",
-      "start of thread"
-    ]
-
-    const threadRegex =
-      /^\s*(?:(\d+)\/(\d+)|(\d+)\.\s|\((\d+)\/(\d+)\)|\[(\d+)\/(\d+)\])/i
-
-    const textElement = postElement.querySelector('[data-testid="tweetText"]')
-    let firstSpanText = ""
-    let fullText = text || ""
-
-    if (textElement) {
-      const spans = textElement.querySelectorAll("span")
-      spans.forEach((span) => {
-        const spanText = span.textContent || ""
-        if (threadRegex.test(spanText)) {
-          firstSpanText = spanText
-        }
-      })
-
-      fullText = textElement.textContent || text
-    }
-
-    const hasThreadIndicators = 
-      threadKeywords.some((keyword) => fullText.toLowerCase().includes(keyword)) ||
-      threadRegex.test(firstSpanText)
-
-    return hasThreadIndicators
+    // Additional check for conversation indicators
+    const conversationIndicators = postElement.querySelectorAll('[data-testid="conversation"]')
+    return conversationIndicators.length > 0
   } catch (error) {
-    console.error("Error in thread detection:", error)
+    console.error("Error in conversation detection:", error)
     return false
   }
 }
 
-async function getThreadContext(postElement: Element): Promise<string> {
+async function getThreadAndRepliesContext(postElement: Element): Promise<string> {
   try {
     const textElement = postElement.querySelector('[data-testid="tweetText"]')
     const currentText = textElement?.textContent || ""
@@ -159,7 +132,7 @@ async function getThreadContext(postElement: Element): Promise<string> {
 
     return threadContext
   } catch (error) {
-    console.error("Error getting thread context:", error)
+    console.error("Error getting thread and replies context:", error)
     return (
       postElement.querySelector('[data-testid="tweetText"]')?.textContent || ""
     )
@@ -185,21 +158,19 @@ async function generateReply(post: Post, postElement: Element) {
       throw new Error("Extension context invalidated")
     }
 
-    const isThread = isPostAThread(post.text, postElement)
-    const systemPrompt = isThread
-      ? "You are a casual reply guy replying to a thread. Keep it natural - use everyday coloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
-      : "You are a casual reply guy. Keep replies short, informal and natural everyday coloquial language. Use common internet slang, emojis occasionally, and don't worry about perfect grammar. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
+    const isConversation = isPostInConversation(postElement)
+    const systemPrompt = isConversation
+      ? "You are a casual reply guy replying to a conversation. Focus on the original post and provide a relevant, natural response. Use everyday colloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
+      : "You are a casual reply guy. Focus on the original post and provide a relevant, natural response. Use everyday colloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
 
-    let userPrompt = `Very briefly reply to this ${isThread ? "thread" : "post"} like any person person would do:\n\n${post.text}\n\nSimply make a short statement on the ${isThread ? "thread" : "post"} itself, ALWAYS address the post in first person refering to what you just processed, context and highlight a couple of remarks (if any) that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nHere's an example of how to behave in a normal post:\n\nPost: BREAKING: House has passed legislation to allow illegal migrants who committed domestic violence or found guilty of s*x crimes to be deported.\n\nIncorrect replies:\n- This should have got unanimous support but 145 democrats hate Americans.\n- Now let's pass another bill to deport the democrats who voted against that bill.\n- Great news\n\nCorrect replies:\n- Wow, this is a significant development you're sharing about the new legislation\n- That's quite a major update about the House's recent decision\n- Interesting move by the House on immigration policy\n\nRemember to stay neutral and focus on acknowledging the content rather than taking sides.\n\n`
-    
-    if (isThread) {
-      const threadContext = await getThreadContext(postElement)
-      userPrompt += `${threadContext}\n\n`
+    let userPrompt = `Please provide a generic reaction to this post: "${post.text}"\n\n`
+
+    if (isConversation) {
+      const threadAndRepliesContext = await getThreadAndRepliesContext(postElement)
+      userPrompt += `Here is the conversation around the post:\n\n${threadAndRepliesContext}\n\nCome up with your own unique take on this post and the conversation.`
     } else {
-      userPrompt += `${post.text}\n\n`
+      userPrompt += `No conversation context available. Focus on the post itself and provide a relevant, natural response.`
     }
-
-    userPrompt += `REMEMBER DO NOT INCLUDE EVERY LITTLE DETAIL OF THE ${isThread ? "THREAD!" : "POST!"}, simply make a very short summarized statement on the ${isThread ? "thread" : "post"}, ALWAYS address the post in first person, context and highlight maybe one or two remarks that seems interesting from it! keep the reply relevant! if the context is regarding a video or a showcase, say something like "that looks amazing" nor "that sounds amazing"\n\nAn INCORRECT reply would be ie. "Dr. Steven Greer is talking about..." A CORRECT reply would be ie. "Whoa! the thing you were talking about is really..."`
 
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -279,10 +250,10 @@ async function handleReplyClick(postElement: Element) {
 
   try {
     // Get thread context first if it's a thread
-    const isThread = isPostAThread(post.text, postElement)
+    const isThread = isPostInConversation(postElement)
     if (isThread) {
       console.log("Detected thread, getting context...")
-      const threadContext = await getThreadContext(postElement)
+      const threadContext = await getThreadAndRepliesContext(postElement)
       post.text = threadContext // Replace post text with full thread context
       console.log("Thread Context:", threadContext)
     }
