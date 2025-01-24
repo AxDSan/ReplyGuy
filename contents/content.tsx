@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 
-import type { PlasmoCSConfig } from "@plasmohq/messaging"
+import type { PlasmoCSConfig } from "plasmo";
 import { querySelector } from "@plasmohq/selector"
 import { Storage } from "@plasmohq/storage"
 import Swal from 'sweetalert2'
@@ -139,7 +139,7 @@ async function getThreadAndRepliesContext(postElement: Element): Promise<string>
   }
 }
 
-async function generateReply(post: Post, postElement: Element) {
+async function generateReply(post: Post, postElement: Element, primingText?: string) {
   try {
     const apiKey = await storage.get("openRouterApiKey")
     const selectedModel = await storage.get("selectedModel")
@@ -164,6 +164,10 @@ async function generateReply(post: Post, postElement: Element) {
       : "You are a casual reply guy. Focus on the original post and provide a relevant, natural response. Use everyday colloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
 
     let userPrompt = `Please provide a generic reaction to this post: "${post.text}"\n\n`
+
+    if (primingText) {
+      userPrompt += `Prime this response with the following text: "${primingText}"\n\n`
+    }
 
     if (isConversation) {
       const threadAndRepliesContext = await getThreadAndRepliesContext(postElement)
@@ -228,6 +232,7 @@ async function handleReplyClick(postElement: Element) {
     return
   }
 
+  const primeEnabled = await storage.get<boolean>("primeEnabled")
   const textElement = postElement.querySelector('[data-testid="tweetText"]')
   const authorElement = postElement.querySelector('[data-testid="User-Name"]')
 
@@ -244,205 +249,278 @@ async function handleReplyClick(postElement: Element) {
   ) as HTMLButtonElement
   if (button) {
     Object.assign(button.style, loadingStyles)
-    button.innerHTML = "🤖 Generating..."
-    button.disabled = true
+    button.innerHTML = "🤖 Generating..." // Indicate processing
+    button.disabled = true;
   }
 
-  try {
-    // Get thread context first if it's a thread
-    const isThread = isPostInConversation(postElement)
-    if (isThread) {
-      console.log("Detected thread, getting context...")
-      const threadContext = await getThreadAndRepliesContext(postElement)
-      post.text = threadContext // Replace post text with full thread context
-      console.log("Thread Context:", threadContext)
+
+  if (primeEnabled) {
+    const replyButton = postElement.querySelector('[data-testid="reply"]')
+    if (replyButton) {
+      ;(replyButton as HTMLElement).click()
     }
 
-    // Now generate reply with the complete context
-    const reply = await generateReply(post, postElement)
-    
-    if (!chrome.runtime?.id) {
-      throw new Error("Extension context invalidated")
-    }
+    // Store post context for later use in prime functionality
+    sessionStorage.setItem('replyguy_post_context', JSON.stringify(post));
+    sessionStorage.setItem('replyguy_post_element', JSON.stringify({
+      innerHTML: postElement.innerHTML, // Store relevant parts of the element
+      // Add other properties if needed, but be mindful of size limits
+    }));
 
-    if (reply && button) {
-      const replyButton = postElement.querySelector('[data-testid="reply"]')
-      if (replyButton) {
-        ;(replyButton as HTMLElement).click()
+    // Add Prime button to the reply modal
+    setTimeout(() => {
+      const modal = document.querySelector('[aria-labelledby="modal-header"]');
+      if (modal) {
+        addPrimeButtonToModal(modal, post, postElement);
+      }
+    }, 500); // Wait for modal to fully render
+  } else {
+    try {
+      const reply = await generateReply(post, postElement, undefined)
 
-        // Wait for reply modal to open and find it
-        const modalTimeout = setTimeout(async () => {
-          if (!chrome.runtime?.id) {
-            clearTimeout(modalTimeout)
-            return
-          }
+      if (reply && button) {
+        const replyButton = postElement.querySelector('[data-testid="reply"]')
+        if (replyButton) {
+          ;(replyButton as HTMLElement).click()
 
-          // Find the most recently opened modal
-          const modals = document.querySelectorAll(
-            '[aria-labelledby="modal-header"]'
-          )
-          const modal = modals[modals.length - 1] // Get the last (most recent) modal
-          if (!modal) {
-            console.error("Could not find reply modal")
-            return
-          }
-
-          // Find the DraftJS editor root within this specific modal
-          const editorRoot = modal.querySelector(".DraftEditor-root")
-          if (editorRoot) {
-            // Remove placeholder within this modal
-            const placeholder = editorRoot.querySelector(
-              ".public-DraftEditorPlaceholder-root"
-            )
-            if (placeholder) {
-              placeholder.remove()
+          // Wait for reply modal to open and find it
+          const modalTimeout = setTimeout(async () => {
+            if (!chrome.runtime?.id) {
+              clearTimeout(modalTimeout)
+              return
             }
 
-            // Find the contenteditable div within this modal
-            const editor = editorRoot.querySelector(
-              '[contenteditable="true"]'
-            ) as HTMLElement
-            if (editor) {
-              // Focus the editor first
-              editor.focus()
+            // Find the most recently opened modal
+            const modals = document.querySelectorAll(
+              '[aria-labelledby="modal-header"]'
+            )
+            const modal = modals[modals.length - 1] // Get the last (most recent) modal
+            if (!modal) {
+              console.error("Could not find reply modal")
+              return
+            }
 
-              // Create text node and insert it
-              const textNode = document.createTextNode(reply)
-              const firstDiv = editor.querySelector('div[data-contents="true"]')
-              if (firstDiv) {
-                const firstBlock = firstDiv.firstElementChild
-                if (firstBlock) {
-                  const textContainer = firstBlock.querySelector(
-                    ".public-DraftStyleDefault-block"
-                  )
-                  if (textContainer) {
-                    textContainer.innerHTML = ""
-                    textContainer.appendChild(textNode)
+            // Find the DraftJS editor root within this specific modal
+            const editorRoot = modal.querySelector(".DraftEditor-root")
+            if (editorRoot) {
+              // Remove placeholder within this modal
+              const placeholder = editorRoot.querySelector(
+                ".public-DraftEditorPlaceholder-root"
+              )
+              if (placeholder) {
+                placeholder.remove()
+              }
 
-                    // Dispatch input event
-                    const inputEvent = new InputEvent("input", {
-                      bubbles: true,
-                      cancelable: true,
-                      composed: true
-                    })
-                    editor.dispatchEvent(inputEvent)
+              // Find the contenteditable div within this modal
+              const editor = editorRoot.querySelector(
+                '[contenteditable="true"]'
+              ) as HTMLElement
+              if (editor) {
+                // Focus the editor first
+                editor.focus()
 
-                    // Wait a bit for Twitter to process the input
-                    setTimeout(async () => {
-                      // Find the submit button within this specific modal
-                      const submitButton = modal.querySelector(
-                        '[data-testid="tweetButton"]'
-                      ) as HTMLButtonElement
-                      if (submitButton) {
-                        submitButton.disabled = false
-                        submitButton.click()
-                      }
-                    }, 100)
+                // Create text node and insert it
+                const textNode = document.createTextNode(reply)
+                const firstDiv = editor.querySelector('div[data-contents="true"]')
+                if (firstDiv) {
+                  const firstBlock = firstDiv.firstElementChild
+                  if (firstBlock) {
+                    const textContainer = firstBlock.querySelector(
+                      ".public-DraftStyleDefault-block"
+                    )
+                    if (textContainer) {
+                      textContainer.innerHTML = ""
+                      textContainer.appendChild(textNode)
+
+                      // Dispatch input event
+                      const inputEvent = new InputEvent("input", {
+                        bubbles: true,
+                        cancelable: true,
+                        composed: true
+                      })
+                      editor.dispatchEvent(inputEvent)
+
+                      // Wait a bit for Twitter to process the input
+                      setTimeout(async () => {
+                        // Find the submit button within this specific modal
+                        const submitButton = modal.querySelector(
+                          '[data-testid="tweetButton"]'
+                        ) as HTMLButtonElement
+                        if (submitButton) {
+                          submitButton.disabled = false
+                          submitButton.click()
+                        }
+                      }, 100)
+                    }
                   }
                 }
               }
             }
-          }
-        }, 1000)
+          }, 1000)
+        }
       }
-    }
-  } catch (error) {
-    if (error.message === "Extension context invalidated") {
-      alert("Extension was reloaded. Please refresh the page and try again.")
-    } else {
-      console.error("Error generating reply:", error)
-      alert("Failed to generate reply. Please try again.")
-    }
-  } finally {
-    if (button && chrome.runtime?.id) {
-      Object.assign(button.style, buttonStyles)
-      button.innerHTML = "🤖"
-      button.disabled = false
+    } catch (error) {
+      if (error.message === "Extension context invalidated") {
+        alert("Extension was reloaded. Please refresh the page and try again.")
+      } else {
+        console.error("Error generating reply:", error)
+        alert("Failed to generate reply. Please try again.")
+      }
+    } finally {
+      if (button && chrome.runtime?.id) {
+        Object.assign(button.style, buttonStyles)
+        button.innerHTML = "🤖"
+        button.disabled = false
+      }
     }
   }
 }
 
-async function addReplyGuyButton(postElement: Element) {
-  console.log("Attempting to add ReplyGuy button to:", postElement)
+async function addPrimeButtonToModal(modal: Element, post: Post, postElement: Element) {
+  const primeButton = document.createElement('button');
+  primeButton.textContent = 'Prime Reply';
+  Object.assign(primeButton.style, buttonStyles);
+  primeButton.style.marginTop = '10px'; // Add some margin
 
-  // Function to find tweet actions
-  const findTweetActions = async (maxAttempts = 5): Promise<Element | null> => {
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      // Wait between attempts
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      
-      // Updated selectors based on X/Twitter's current structure
-      const actionSelectors = [
-        '[data-testid="tweetButtonInline"]',  // Try to find the inline actions first
-        '[data-testid="tweet"] [role="group"]',
-        '[data-testid="tweetButtonInline"] [role="group"]',
-        '[data-testid="tweetActionBar"]',
-        '[data-testid="reply"]'  // If we can find the reply button, we can find its parent
-      ]
+  primeButton.addEventListener('click', async () => {
+    const editor = modal.querySelector<HTMLElement>('[contenteditable="true"]');
+    const primingText = editor?.textContent || "";
+    
+    Object.assign(primeButton.style, loadingStyles);
+    primeButton.textContent = "🤖 Generating...";
+    primeButton.disabled = true;
 
-      for (const selector of actionSelectors) {
-        const element = postElement.querySelector(selector)
-        if (element) {
-          // If we found the reply button, get its parent group
-          if (selector === '[data-testid="reply"]') {
-            return element.closest('[role="group"]') || element.parentElement
+    const reply = await generateReply(post, postElement, primingText);
+
+    if (reply) {
+      // Find the DraftJS editor root within this specific modal
+      const editorRoot = modal.querySelector(".DraftEditor-root")
+      if (editorRoot) {
+        // Remove placeholder within this modal
+        const placeholder = editorRoot.querySelector(
+          ".public-DraftEditorPlaceholder-root"
+        )
+        if (placeholder) {
+          placeholder.remove()
+        }
+
+        // Find the contenteditable div within this modal
+        const editor = editorRoot.querySelector(
+          '[contenteditable="true"]'
+        ) as HTMLElement
+        if (editor) {
+          // Focus the editor first
+          editor.focus()
+
+          // Create text node and insert it
+          const textNode = document.createTextNode(reply)
+          const firstDiv = editor.querySelector('div[data-contents="true"]')
+          if (firstDiv) {
+            const firstBlock = firstDiv.firstElementChild
+            if (firstBlock) {
+              const textContainer = firstBlock.querySelector(
+                ".public-DraftStyleDefault-block"
+              )
+              if (textContainer) {
+                textContainer.innerHTML = ""
+                textContainer.appendChild(textNode)
+
+                // Dispatch input event
+                const inputEvent = new InputEvent("input", {
+                  bubbles: true,
+                  cancelable: true,
+                  composed: true
+                })
+                editor.dispatchEvent(inputEvent)
+              }
+            }
           }
-          return element
         }
       }
-      
-      console.log(`Attempt ${attempt + 1}: Waiting for tweet actions to load...`)
     }
-    return null
-  }
+
+    Object.assign(primeButton.style, buttonStyles);
+    primeButton.textContent = "Prime Reply";
+    primeButton.disabled = false;
+  });
+
+  // Conditionally append Prime button based on setting
+  storage.get("primeEnabled").then(primeEnabled => {
+    if (primeEnabled) {
+      modal.querySelector('[data-testid="tweetButton"]').parentElement.appendChild(primeButton);
+    }
+  });
+}
+
+async function addReplyGuyButton(postElement: Element) {
+  console.log("Attempting to add ReplyGuy button to:", postElement);
+
+  // Function to find tweet actions
+  const findTweetActions = async (maxAttempts: number = 5): Promise<Element | null> => {
+    console.log("findTweetActions started");
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      // Wait between attempts
+      await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+
+      // Try to find tweet actions container
+      const tweetActions = postElement.querySelector('div[role="group"].r-1kbdv8c');
+      if (tweetActions) {
+        return tweetActions;
+      }
+    }
+    console.warn("Could not find tweet actions after multiple attempts");
+    return null;
+  };
 
   try {
-    const tweetActions = await findTweetActions()
+    const tweetActions = await findTweetActions();
     
     if (!tweetActions) {
-      console.error("Could not find tweet actions after multiple attempts. Post HTML:", postElement.innerHTML)
-      return
+      console.error("Could not find tweet actions after multiple attempts. Post HTML:", postElement.innerHTML);
+      return;
     }
+
+    console.log("Tweet actions found:", tweetActions);
 
     // Check if a button already exists
     if (postElement.querySelector(".replyguy-button")) {
-      console.log("ReplyGuy button already exists")
-      return
+      console.log("ReplyGuy button already exists");
+      return;
     }
 
-    const textElement = postElement.querySelector('[data-testid="tweetText"]')
-    const authorElement = postElement.querySelector('[data-testid="User-Name"]')
+    const textElement = postElement.querySelector('[data-testid="tweetText"]');
+    const authorElement = postElement.querySelector('[data-testid="User-Name"]');
 
     if (!textElement || !authorElement) {
       console.error("Missing required elements:", {
         hasText: !!textElement,
         hasAuthor: !!authorElement
-      })
-      return
+      });
+      return;
     }
 
     const post: Post = {
       id: postElement.getAttribute("aria-labelledby") || "",
       text: textElement.textContent || "",
       author: authorElement.textContent || ""
-    }
+    };
 
-    console.log("Creating button for post:", post)
+    console.log("Creating button for post:", post);
 
-    const button = document.createElement("button")
-    button.classList.add("replyguy-button")
-    Object.assign(button.style, buttonStyles)
-    button.innerHTML = "🤖"
+    const button = document.createElement("button");
+    button.classList.add("replyguy-button");
+    Object.assign(button.style, buttonStyles);
+    button.innerHTML = "🤖";
 
     button.addEventListener("click", async () => {
-      await handleReplyClick(postElement)
-    })
+      await handleReplyClick(postElement);
+    });
 
     // Insert the button in the tweet actions area
-    tweetActions.insertBefore(button, tweetActions.firstChild)
-    console.log("Successfully added ReplyGuy button")
+    tweetActions.insertAdjacentElement('afterend', button);
+    console.log("Successfully added ReplyGuy button");
   } catch (error) {
-    console.error("Error adding button:", error)
+    console.error("Error adding button:", error);
   }
 }
 
@@ -519,6 +597,7 @@ async function observePosts() {
 }
 
 const ContentScript = () => {
+  console.log("ContentScript component is running");
   useEffect(() => {
     let cleanup: (() => void) | undefined
 

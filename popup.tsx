@@ -118,7 +118,7 @@ function ModelCard({
         marginBottom: 8,
         transition: "all 0.2s ease",
         border: `1px solid ${isSelected ? theme.colors.primary : theme.colors.border}`,
-        "&:hover": {
+        ":hover": {
           backgroundColor: `${theme.colors.primary}10`,
           borderColor: theme.colors.primary
         }
@@ -631,7 +631,8 @@ function SettingsCard() {
   const navigate = useNavigate();
   const [apiKey, setApiKey] = useState("")
   const [selectedModel, setSelectedModel] = useState("")
-  const [enabled, setEnabled] = useState(false)
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false)
+  const [primeEnabled, setPrimeEnabled] = useState(true) // New state for prime functionality
   const [models, setModels] = useState<Model[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(true)
   const [modelError, setModelError] = useState<string | null>(null)
@@ -642,10 +643,12 @@ function SettingsCard() {
     const loadSettings = async () => {
       const storedApiKey = await storage.get<string>("openRouterApiKey")
       const storedModel = await storage.get<string>("selectedModel")
-      const isEnabled = await storage.get<boolean>("autoReplyEnabled")
+      const isAutoReplyEnabled = await storage.get<boolean>("autoReplyEnabled")
+      const isPrimeEnabled = await storage.get<boolean>("primeEnabled") // Load prime setting
       setApiKey(storedApiKey || "")
       setSelectedModel(storedModel || "mistralai/mistral-7b-instruct")
-      setEnabled(isEnabled === undefined ? false : isEnabled)
+      setAutoReplyEnabled(isAutoReplyEnabled === undefined ? false : isAutoReplyEnabled)
+      setPrimeEnabled(isPrimeEnabled === undefined ? true : isPrimeEnabled) // Set prime setting, default to true
     }
     loadSettings()
   }, [])
@@ -674,7 +677,8 @@ function SettingsCard() {
   const saveSettings = async () => {
     await storage.set("openRouterApiKey", apiKey)
     await storage.set("selectedModel", selectedModel)
-    await storage.set("autoReplyEnabled", enabled)
+    await storage.set("autoReplyEnabled", autoReplyEnabled)
+    await storage.set("primeEnabled", primeEnabled) // Save prime setting
     Swal.fire({
       icon: 'success',
       title: 'Settings Saved!',
@@ -699,16 +703,16 @@ function SettingsCard() {
         gap: "16px"
       }}>
       <style>{globalStyles}</style>
-      <div style={{ 
-        fontSize: 24, 
-        fontWeight: "bold", 
+      <div style={{
+        fontSize: 24,
+        fontWeight: "bold",
         marginBottom: 16,
-        background: `linear-gradient(45deg, 
-          ${theme.colors.primary}, 
-          #4ade80, 
-          #2dd4bf, 
-          #0ea5e9, 
-          #a855f7, 
+        background: `linear-gradient(45deg,
+          ${theme.colors.primary},
+          #4ade80,
+          #2dd4bf,
+          #0ea5e9,
+          #a855f7,
           ${theme.colors.primary})`,
         backgroundSize: "200% auto",
         WebkitBackgroundClip: "text",
@@ -826,7 +830,7 @@ function SettingsCard() {
           style={{
             width: 42,
             height: 24,
-            backgroundColor: enabled
+            backgroundColor: autoReplyEnabled
               ? theme.colors.primary
               : theme.colors.border,
             borderRadius: 12,
@@ -842,14 +846,14 @@ function SettingsCard() {
               borderRadius: "50%",
               position: "absolute",
               top: 2,
-              left: enabled ? 20 : 2,
+              left: autoReplyEnabled ? 20 : 2,
               transition: "left 0.2s ease"
             }}
           />
           <input
             type="checkbox"
-            checked={enabled}
-            onChange={(e) => setEnabled(e.target.checked)}
+            checked={autoReplyEnabled}
+            onChange={(e) => setAutoReplyEnabled(e.target.checked)}
             style={{
               opacity: 0,
               position: "absolute",
@@ -860,6 +864,53 @@ function SettingsCard() {
           />
         </div>
         <span style={{ fontSize: 14 }}>Enable Auto-Reply</span>
+      </label>
+      
+      <label // New checkbox for prime functionality
+        style={{
+          display: "flex",
+          alignItems: "center",
+          marginTop: 16,
+          cursor: "pointer"
+        }}>
+        <div
+          style={{
+            width: 42,
+            height: 24,
+            backgroundColor: primeEnabled
+              ? theme.colors.primary
+              : theme.colors.border,
+            borderRadius: 12,
+            position: "relative",
+            transition: "background-color 0.2s ease",
+            marginRight: 12
+          }}>
+          <div
+            style={{
+              width: 20,
+              height: 20,
+              backgroundColor: "white",
+              borderRadius: "50%",
+              position: "absolute",
+              top: 2,
+              left: primeEnabled ? 20 : 2,
+              transition: "left 0.2s ease"
+            }}
+          />
+          <input
+            type="checkbox"
+            checked={primeEnabled}
+            onChange={(e) => setPrimeEnabled(e.target.checked)}
+            style={{
+              opacity: 0,
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              cursor: "pointer"
+            }}
+          />
+        </div>
+        <span style={{ fontSize: 14 }}>Enable Prime Functionality</span>
       </label>
 
       <button
@@ -877,7 +928,7 @@ function SettingsCard() {
         Save Settings
       </button>
 
-      <div style={{ 
+      <div style={{
         marginTop: 24,
         padding: "16px",
         backgroundColor: theme.colors.cardBg,
@@ -899,13 +950,13 @@ function SettingsCard() {
         </div>
 
         <div>
-          <button 
-            onClick={() => navigate('/privacy')} 
-            style={{ 
+          <button
+            onClick={() => navigate('/privacy')}
+            style={{
               background: 'none',
               border: 'none',
               padding: 0,
-              color: theme.colors.primary, 
+              color: theme.colors.primary,
               marginRight: 12,
               cursor: 'pointer',
               textDecoration: 'underline',
@@ -913,13 +964,13 @@ function SettingsCard() {
             }}>
             Privacy Policy
           </button>
-          <button 
-            onClick={() => navigate('/terms')} 
-            style={{ 
+          <button
+            onClick={() => navigate('/terms')}
+            style={{
               background: 'none',
               border: 'none',
               padding: 0,
-              color: theme.colors.primary, 
+              color: theme.colors.primary,
               marginRight: 12,
               cursor: 'pointer',
               textDecoration: 'underline',
@@ -927,10 +978,10 @@ function SettingsCard() {
             }}>
             Terms of Service
           </button>
-          <a 
-            href="https://github.com/axdsan/replyguy" 
-            target="_blank" 
-            rel="noopener noreferrer" 
+          <a
+            href="https://github.com/axdsan/replyguy"
+            target="_blank"
+            rel="noopener noreferrer"
             style={{ color: theme.colors.primary }}>
             GitHub
           </a>
