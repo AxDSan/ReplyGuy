@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history for tags
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -33,10 +35,27 @@ jobs:
       - name: Build Production
         run: npm run build:prod
 
-      - name: Extract Tag
-        id: extract_tag
+      - name: Get Latest Tag
+        id: get_latest_tag
         run: |
-          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+      - name: Increment Tag Version
+        id: increment_tag_version
+        run: |
+          TAG_VERSION="${{ env.LATEST_TAG }}"
+          # Remove 'v' prefix and split into parts
+          VERSION_PARTS=(${TAG_VERSION//./ })
+          MAJOR=${VERSION_PARTS[0]#v}
+          MINOR=${VERSION_PARTS[1]}
+          PATCH=${VERSION_PARTS[2]}
+
+          # Increment patch version
+          NEW_PATCH=$((PATCH + 1))
+          NEW_TAG="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
 
       - name: Generate Release Notes
         run: |
@@ -44,7 +63,7 @@ jobs:
           echo "" >> release_notes.txt
           echo "To install the extension, follow these steps:" >> release_notes.txt
           echo "" >> release_notes.txt
-          echo "1. Download the \`reply-guy-v${{ env.TAG }}-prod.zip\` file from the release assets." >> release_notes.txt
+          echo "1. Download the \`reply-guy-v${{ env.NEW_TAG }}-prod.zip\` file from the release assets." >> release_notes.txt
           echo "2. Extract the zip file to a directory of your choice." >> release_notes.txt
           echo "3. Open your browser and go to the extensions page (chrome://extensions or edge://extensions)." >> release_notes.txt
           echo "4. Enable 'Developer mode' at the top right corner." >> release_notes.txt
@@ -58,8 +77,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.TAG }}
-          release_name: Release v${{ env.TAG }}
+          tag_name: ${{ env.NEW_TAG }}
+          release_name: Release ${{ env.NEW_TAG }}
           draft: false
           prerelease: false
 
@@ -70,7 +89,7 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: build/chrome-mv3-prod.zip
-          asset_name: reply-guy-v${{ env.TAG }}-prod.zip
+          asset_name: reply-guy-v${{ env.NEW_TAG }}-prod.zip
           asset_content_type: application/zip
 
       - name: Upload Installation Instructions to Release
@@ -80,5 +99,5 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: release_notes.txt
-          asset_name: reply-guy-v${{ env.TAG }}-release-notes.txt
+          asset_name: reply-guy-v${{ env.NEW_TAG }}-release-notes.txt
           asset_content_type: text/plain
