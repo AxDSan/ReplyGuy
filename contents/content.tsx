@@ -1,25 +1,36 @@
-import { useEffect } from "react"
+// content.tsx
 
-import type { PlasmoCSConfig } from "plasmo";
-import { querySelector } from "@plasmohq/selector"
+// Kept only the necessary imports for the content script logic and UI handling
+import { useEffect } from "react"
+import type { PlasmoCSConfig } from "plasmo"
+import Swal from "sweetalert2" // for handling alerts
+
+// Import the separated logic
+import { generateReply } from "./utils/services/replyService"
+
 import { Storage } from "@plasmohq/storage"
-import Swal from 'sweetalert2'
+import { querySelector } from "@plasmohq/selector"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://twitter.com/*", "https://x.com/*"],
   all_frames: true
 }
 
+// -----------------------------------------------------
+// NOTE: The storage and interfaces remain the same
+// -----------------------------------------------------
 const storage = new Storage()
 
 interface Post {
   id: string
   text: string
   author: string
-  replies?: string[] // Added to store replies
+  replies?: string[]
 }
 
-// Styles for the ReplyGuy button
+// -----------------------------------------------------
+// Button style definitions remain the same
+// -----------------------------------------------------
 const buttonStyles = {
   backgroundColor: "#00ff9d15",
   color: "#00ff9d",
@@ -49,184 +60,10 @@ const loadingStyles = {
   cursor: "not-allowed"
 }
 
-// Enhanced function to detect if a post is part of a conversation
-function isPostInConversation(postElement: Element): boolean {
-  try {
-    // Check for "show this thread" button
-    const threadButtons = Array.from(
-      postElement.querySelectorAll("span")
-    ).filter((span) =>
-      span.textContent?.toLowerCase().includes("show this thread")
-    )
-
-    if (threadButtons.length > 0) {
-      return true
-    }
-
-    // Check for replies to the post
-    const replyElements = postElement.querySelectorAll('[data-testid="reply"]')
-    if (replyElements.length > 0) {
-      return true
-    }
-
-    // Additional check for conversation indicators
-    const conversationIndicators = postElement.querySelectorAll('[data-testid="conversation"]')
-    return conversationIndicators.length > 0
-  } catch (error) {
-    console.error("Error in conversation detection:", error)
-    return false
-  }
-}
-
-async function getThreadAndRepliesContext(postElement: Element): Promise<string> {
-  try {
-    const textElement = postElement.querySelector('[data-testid="tweetText"]')
-    const currentText = textElement?.textContent || ""
-
-    const threadButtons = Array.from(
-      postElement.querySelectorAll("span")
-    ).filter((span) =>
-      span.textContent?.toLowerCase().includes("show this thread")
-    )
-
-    if (threadButtons.length > 0) {
-      const button = threadButtons[0].closest(
-        'div[role="button"]'
-      ) as HTMLElement
-      if (button) {
-        button.click()
-
-        let retries = 0
-        const maxRetries = 3
-
-        while (retries < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 1000))
-          const threadPosts = document.querySelectorAll(
-            'article[role="article"]'
-          )
-          if (threadPosts.length > 1) {
-            break
-          }
-          retries++
-        }
-      }
-    }
-
-    const threadPosts = document.querySelectorAll('article[role="article"]')
-    let threadContext = ""
-    let seenTexts = new Set()
-
-    threadPosts.forEach((post) => {
-      const postText =
-        post.querySelector('[data-testid="tweetText"]')?.textContent || ""
-      if (postText && !seenTexts.has(postText)) {
-        seenTexts.add(postText)
-        threadContext += postText + "\n---\n"
-      }
-    })
-
-    if (!threadContext.trim()) {
-      console.warn("Thread context not found, using single post")
-      return currentText
-    }
-
-    return threadContext
-  } catch (error) {
-    console.error("Error getting thread and replies context:", error)
-    return (
-      postElement.querySelector('[data-testid="tweetText"]')?.textContent || ""
-    )
-  }
-}
-
-async function generateReply(post: Post, postElement: Element, primingText?: string) {
-  try {
-    const apiKey = await storage.get("openRouterApiKey")
-    const selectedModel = await storage.get("selectedModel")
-
-    if (!apiKey) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'API Key Required',
-        text: 'Please set your OpenRouter API key in the extension settings.',
-      })
-      return null
-    }
-
-    // Check if extension context is still valid
-    if (!chrome.runtime?.id) {
-      throw new Error("Extension context invalidated")
-    }
-
-    const isConversation = isPostInConversation(postElement)
-    const systemPrompt = isConversation
-      ? "You are a casual reply guy replying to a conversation. Focus on the original post and provide a relevant, natural response. Use everyday colloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
-      : "You are a casual reply guy. Focus on the original post and provide a relevant, natural response. Use everyday colloquial language, occasional typos, and short responses. Don't be too formal or polished. You don't use the term `Twitter` as it's outdated, you use 𝕏 only refer to it whenever you are talking about the platform."
-
-    let userPrompt = `Please provide a generic reaction to this post: "${post.text}"\n\n`
-
-    if (primingText) {
-      userPrompt += `Prime this response with the following text: "${primingText}"\n\n`
-    }
-
-    if (isConversation) {
-      const threadAndRepliesContext = await getThreadAndRepliesContext(postElement)
-      userPrompt += `Here is the conversation around the post:\n\n${threadAndRepliesContext}\n\nCome up with your own unique take on this post and the conversation.`
-    } else {
-      userPrompt += `No conversation context available. Focus on the post itself and provide a relevant, natural response.`
-    }
-
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: selectedModel || "mistralai/mistral-7b-instruct",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt
-          },
-          {
-            role: "user",
-            content: userPrompt
-          }
-        ],
-        max_tokens: 150
-      })
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      Swal.fire({
-        icon: 'error',
-        title: 'Error generating reply',
-        text: errorData.error?.message || 'Something went wrong.',
-      })
-      return null
-    }
-
-    const data = await response.json()
-    if (!data?.choices?.[0]?.message?.content) {
-      throw new Error('Invalid response format from API')
-    }
-    return data.choices[0].message.content
-
-  } catch (error: any) {
-    console.error("Error generating reply:", error)
-    Swal.fire({
-      icon: 'error',
-      title: 'Error',
-      text: error.message || 'An unexpected error occurred.',
-    })
-    return null
-  }
-}
-
+// -------------------------------------------------------------
+// handleReplyClick now uses "generateReply" imported from our service
+// -------------------------------------------------------------
 async function handleReplyClick(postElement: Element) {
-  // Check if extension context is still valid
   if (!chrome.runtime?.id) {
     alert("Extension context invalid. Please refresh the page and try again.")
     return
@@ -244,15 +81,12 @@ async function handleReplyClick(postElement: Element) {
     author: authorElement.textContent || ""
   }
 
-  const button = postElement.querySelector(
-    ".replyguy-button"
-  ) as HTMLButtonElement
+  const button = postElement.querySelector(".replyguy-button") as HTMLButtonElement
   if (button) {
     Object.assign(button.style, loadingStyles)
-    button.innerHTML = "🤖 Generating..." // Indicate processing
-    button.disabled = true;
+    button.innerHTML = "🤖 Generating..."
+    button.disabled = true
   }
-
 
   if (primeEnabled) {
     const replyButton = postElement.querySelector('[data-testid="reply"]')
@@ -260,79 +94,58 @@ async function handleReplyClick(postElement: Element) {
       ;(replyButton as HTMLElement).click()
     }
 
-    // Store post context for later use in prime functionality
-    sessionStorage.setItem('replyguy_post_context', JSON.stringify(post));
-    sessionStorage.setItem('replyguy_post_element', JSON.stringify({
-      innerHTML: postElement.innerHTML, // Store relevant parts of the element
-      // Add other properties if needed, but be mindful of size limits
-    }));
+    sessionStorage.setItem("replyguy_post_context", JSON.stringify(post))
+    sessionStorage.setItem("replyguy_post_element", JSON.stringify({
+      innerHTML: postElement.innerHTML
+    }))
 
-    // Add Prime button to the reply modal
     setTimeout(() => {
-      const modal = document.querySelector('[aria-labelledby="modal-header"]');
+      const modal = document.querySelector('[aria-labelledby="modal-header"]')
       if (modal) {
-        addPrimeButtonToModal(modal, post, postElement);
+        addPrimeButtonToModal(modal, post, postElement)
       }
-    }, 500); // Wait for modal to fully render
+    }, 500)
   } else {
     try {
       const reply = await generateReply(post, postElement, undefined)
-
       if (reply && button) {
         const replyButton = postElement.querySelector('[data-testid="reply"]')
         if (replyButton) {
           ;(replyButton as HTMLElement).click()
 
-          // Wait for reply modal to open and find it
           const modalTimeout = setTimeout(async () => {
             if (!chrome.runtime?.id) {
               clearTimeout(modalTimeout)
               return
             }
 
-            // Find the most recently opened modal
-            const modals = document.querySelectorAll(
-              '[aria-labelledby="modal-header"]'
-            )
-            const modal = modals[modals.length - 1] // Get the last (most recent) modal
+            const modals = document.querySelectorAll('[aria-labelledby="modal-header"]')
+            const modal = modals[modals.length - 1]
             if (!modal) {
               console.error("Could not find reply modal")
               return
             }
 
-            // Find the DraftJS editor root within this specific modal
             const editorRoot = modal.querySelector(".DraftEditor-root")
             if (editorRoot) {
-              // Remove placeholder within this modal
-              const placeholder = editorRoot.querySelector(
-                ".public-DraftEditorPlaceholder-root"
-              )
+              const placeholder = editorRoot.querySelector(".public-DraftEditorPlaceholder-root")
               if (placeholder) {
                 placeholder.remove()
               }
 
-              // Find the contenteditable div within this modal
-              const editor = editorRoot.querySelector(
-                '[contenteditable="true"]'
-              ) as HTMLElement
+              const editor = editorRoot.querySelector('[contenteditable="true"]') as HTMLElement
               if (editor) {
-                // Focus the editor first
                 editor.focus()
-
-                // Create text node and insert it
                 const textNode = document.createTextNode(reply)
                 const firstDiv = editor.querySelector('div[data-contents="true"]')
                 if (firstDiv) {
                   const firstBlock = firstDiv.firstElementChild
                   if (firstBlock) {
-                    const textContainer = firstBlock.querySelector(
-                      ".public-DraftStyleDefault-block"
-                    )
+                    const textContainer = firstBlock.querySelector(".public-DraftStyleDefault-block")
                     if (textContainer) {
                       textContainer.innerHTML = ""
                       textContainer.appendChild(textNode)
 
-                      // Dispatch input event
                       const inputEvent = new InputEvent("input", {
                         bubbles: true,
                         cancelable: true,
@@ -340,12 +153,8 @@ async function handleReplyClick(postElement: Element) {
                       })
                       editor.dispatchEvent(inputEvent)
 
-                      // Wait a bit for Twitter to process the input
                       setTimeout(async () => {
-                        // Find the submit button within this specific modal
-                        const submitButton = modal.querySelector(
-                          '[data-testid="tweetButton"]'
-                        ) as HTMLButtonElement
+                        const submitButton = modal.querySelector('[data-testid="tweetButton"]') as HTMLButtonElement
                         if (submitButton) {
                           submitButton.disabled = false
                           submitButton.click()
@@ -360,7 +169,7 @@ async function handleReplyClick(postElement: Element) {
         }
       }
     } catch (error) {
-      if (error.message === "Extension context invalidated") {
+      if ((error as Error).message === "Extension context invalidated") {
         alert("Extension was reloaded. Please refresh the page and try again.")
       } else {
         console.error("Error generating reply:", error)
@@ -376,62 +185,51 @@ async function handleReplyClick(postElement: Element) {
   }
 }
 
+// --------------------------------------------------------
+// The Prime button logic remains the same, referencing generateReply
+// --------------------------------------------------------
 async function addPrimeButtonToModal(modal: Element, post: Post, postElement: Element) {
-  const primeButton = document.createElement('button');
-  primeButton.textContent = 'Prime Reply';
-  Object.assign(primeButton.style, buttonStyles);
-  primeButton.style.marginTop = '10px'; // Add some margin
+  const primeButton = document.createElement("button")
+  primeButton.textContent = "Prime Reply"
+  Object.assign(primeButton.style, buttonStyles)
+  primeButton.style.marginTop = "10px"
 
-  primeButton.addEventListener('click', async () => {
-    const editor = modal.querySelector<HTMLElement>('[contenteditable="true"]');
-    const primingText = editor?.textContent || "";
-    
-    Object.assign(primeButton.style, loadingStyles);
-    primeButton.textContent = "🤖 Generating...";
-    primeButton.disabled = true;
+  primeButton.addEventListener("click", async () => {
+    const editor = modal.querySelector<HTMLElement>('[contenteditable="true"]')
+    const primingText = editor?.textContent || ""
 
-    const reply = await generateReply(post, postElement, primingText);
+    Object.assign(primeButton.style, loadingStyles)
+    primeButton.textContent = "🤖 Generating..."
+    primeButton.disabled = true
 
+    const reply = await generateReply(post, postElement, primingText)
     if (reply) {
-      // Find the DraftJS editor root within this specific modal
       const editorRoot = modal.querySelector(".DraftEditor-root")
       if (editorRoot) {
-        // Remove placeholder within this modal
-        const placeholder = editorRoot.querySelector(
-          ".public-DraftEditorPlaceholder-root"
-        )
+        const placeholder = editorRoot.querySelector(".public-DraftEditorPlaceholder-root")
         if (placeholder) {
           placeholder.remove()
         }
 
-        // Find the contenteditable div within this modal
-        const editor = editorRoot.querySelector(
-          '[contenteditable="true"]'
-        ) as HTMLElement
-        if (editor) {
-          // Focus the editor first
-          editor.focus()
-
-          // Create text node and insert it
+        const editorElem = editorRoot.querySelector('[contenteditable="true"]') as HTMLElement
+        if (editorElem) {
+          editorElem.focus()
           const textNode = document.createTextNode(reply)
-          const firstDiv = editor.querySelector('div[data-contents="true"]')
+          const firstDiv = editorElem.querySelector('div[data-contents="true"]')
           if (firstDiv) {
             const firstBlock = firstDiv.firstElementChild
             if (firstBlock) {
-              const textContainer = firstBlock.querySelector(
-                ".public-DraftStyleDefault-block"
-              )
+              const textContainer = firstBlock.querySelector(".public-DraftStyleDefault-block")
               if (textContainer) {
                 textContainer.innerHTML = ""
                 textContainer.appendChild(textNode)
 
-                // Dispatch input event
                 const inputEvent = new InputEvent("input", {
                   bubbles: true,
                   cancelable: true,
                   composed: true
                 })
-                editor.dispatchEvent(inputEvent)
+                editorElem.dispatchEvent(inputEvent)
               }
             }
           }
@@ -439,106 +237,91 @@ async function addPrimeButtonToModal(modal: Element, post: Post, postElement: El
       }
     }
 
-    Object.assign(primeButton.style, buttonStyles);
-    primeButton.textContent = "Prime Reply";
-    primeButton.disabled = false;
-  });
+    Object.assign(primeButton.style, buttonStyles)
+    primeButton.textContent = "Prime Reply"
+    primeButton.disabled = false
+  })
 
-  // Conditionally append Prime button based on setting
   storage.get("primeEnabled").then(primeEnabled => {
     if (primeEnabled) {
-      modal.querySelector('[data-testid="tweetButton"]').parentElement.appendChild(primeButton);
+      modal.querySelector('[data-testid="tweetButton"]')!.parentElement!.appendChild(primeButton)
     }
-  });
+  })
 }
 
+// --------------------------------------------------------
+// addReplyGuyButton now focuses on UI injection only,
+// relying on handleReplyClick to do the rest
+// --------------------------------------------------------
 async function addReplyGuyButton(postElement: Element) {
-  console.log("Attempting to add ReplyGuy button to:", postElement);
+  console.log("Attempting to add ReplyGuy button to:", postElement)
 
-  // Function to find tweet actions
   const findTweetActions = async (maxAttempts: number = 5): Promise<Element | null> => {
-    console.log("findTweetActions started");
+    console.log("findTweetActions started")
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      // Wait between attempts
-      await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-
-      // Try to find tweet actions container
-      const tweetActions = postElement.querySelector('div[role="group"].r-1kbdv8c');
+      await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+      const tweetActions = postElement.querySelector('div[role="group"].r-1kbdv8c')
       if (tweetActions) {
-        return tweetActions;
+        return tweetActions
       }
     }
-    console.warn("Could not find tweet actions after multiple attempts");
-    return null;
-  };
+    console.warn("Could not find tweet actions after multiple attempts")
+    return null
+  }
 
   try {
-    const tweetActions = await findTweetActions();
-    
+    const tweetActions = await findTweetActions()
     if (!tweetActions) {
-      console.error("Could not find tweet actions after multiple attempts. Post HTML:", postElement.innerHTML);
-      return;
+      console.error("Could not find tweet actions after multiple attempts. Post HTML:", postElement.innerHTML)
+      return
     }
 
-    console.log("Tweet actions found:", tweetActions);
-
-    // Check if a button already exists
+    console.log("Tweet actions found:", tweetActions)
     if (postElement.querySelector(".replyguy-button")) {
-      console.log("ReplyGuy button already exists");
-      return;
+      console.log("ReplyGuy button already exists")
+      return
     }
 
-    const textElement = postElement.querySelector('[data-testid="tweetText"]');
-    const authorElement = postElement.querySelector('[data-testid="User-Name"]');
-
+    const textElement = postElement.querySelector('[data-testid="tweetText"]')
+    const authorElement = postElement.querySelector('[data-testid="User-Name"]')
     if (!textElement || !authorElement) {
       console.error("Missing required elements:", {
         hasText: !!textElement,
         hasAuthor: !!authorElement
-      });
-      return;
+      })
+      return
     }
 
-    const post: Post = {
-      id: postElement.getAttribute("aria-labelledby") || "",
-      text: textElement.textContent || "",
-      author: authorElement.textContent || ""
-    };
-
-    console.log("Creating button for post:", post);
-
-    const button = document.createElement("button");
-    button.classList.add("replyguy-button");
-    Object.assign(button.style, buttonStyles);
-    button.innerHTML = "🤖";
+    const button = document.createElement("button")
+    button.classList.add("replyguy-button")
+    Object.assign(button.style, buttonStyles)
+    button.innerHTML = "🤖"
 
     button.addEventListener("click", async () => {
-      await handleReplyClick(postElement);
-    });
+      await handleReplyClick(postElement)
+    })
 
-    // Insert the button in the tweet actions area
-    tweetActions.insertAdjacentElement('afterend', button);
-    console.log("Successfully added ReplyGuy button");
+    tweetActions.insertAdjacentElement("afterend", button)
+    console.log("Successfully added ReplyGuy button")
   } catch (error) {
-    console.error("Error adding button:", error);
+    console.error("Error adding button:", error)
   }
 }
 
+// --------------------------------------------------------
+// observePosts remains our entry point, hooking everything up
+// --------------------------------------------------------
 async function observePosts() {
   console.log("Setting up post observer")
 
-  let observerTimeout: NodeJS.Timeout | null = null;
+  let observerTimeout: NodeJS.Timeout | null = null
 
-  const observer = new MutationObserver(async (mutations) => {
-
-    // Debounce the processing of mutations
+  const observer = new MutationObserver(async () => {
     if (observerTimeout) {
       clearTimeout(observerTimeout)
     }
-
     observerTimeout = setTimeout(async () => {
       console.log("Processing mutations")
-      // Find all articles, even if deeply nested
       const allPosts = document.querySelectorAll('article[role="article"]')
       console.log("Found posts:", allPosts.length)
 
@@ -551,7 +334,6 @@ async function observePosts() {
   })
 
   try {
-    // Try multiple possible timeline selectors
     const timelineSelectors = [
       '[data-testid="primaryColumn"]',
       'main[role="main"]',
@@ -596,8 +378,11 @@ async function observePosts() {
   }
 }
 
+// --------------------------------------------------------
+// The main ContentScript component now just initializes everything
+// --------------------------------------------------------
 const ContentScript = () => {
-  console.log("ContentScript component is running");
+  console.log("ContentScript component is running")
   useEffect(() => {
     let cleanup: (() => void) | undefined
 
@@ -605,10 +390,8 @@ const ContentScript = () => {
       cleanup = await observePosts()
     }
 
-    // Initialize when the component mounts
     init()
 
-    // Re-initialize when URL changes (for Twitter's SPA navigation)
     let lastUrl = location.href
     const urlObserver = new MutationObserver(() => {
       const url = location.href
@@ -623,7 +406,6 @@ const ContentScript = () => {
 
     urlObserver.observe(document, { subtree: true, childList: true })
 
-    // Cleanup when component unmounts
     return () => {
       if (cleanup) {
         cleanup()
