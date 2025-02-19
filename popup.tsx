@@ -178,8 +178,8 @@ function ModelCard({
             flexDirection: "column",
             gap: 4
           }}>
-          <div>💰 {model.pricing?.prompt || "N/A"}/1K prompt</div>
-          <div>💰 {model.pricing?.completion || "N/A"}/1K completion</div>
+          <div>💰 ${model.pricing?.prompt ? (parseFloat(model.pricing.prompt) * 1000000).toFixed(2) : "N/A"}/1K prompt</div>
+          <div>💰 ${model.pricing?.completion ? (parseFloat(model.pricing.completion) * 1000000).toFixed(2) : "N/A"}/1K completion</div>
         </div>
       </div>
     </div>
@@ -188,15 +188,15 @@ function ModelCard({
 
 function Privacy() {
   const navigate = useNavigate();
-  
+
   return (
-    <div style={{ 
-      padding: "20px", 
+    <div style={{
+      padding: "20px",
       color: theme.colors.text,
       maxHeight: "600px",
       overflowY: "auto"
     }}>
-      <button 
+      <button
         onClick={() => navigate('/')}
         style={{
           backgroundColor: "transparent",
@@ -220,7 +220,7 @@ function Privacy() {
         <span>←</span> Back to Settings
       </button>
 
-      <h1 style={{ 
+      <h1 style={{
         color: theme.colors.primary,
         fontSize: "24px",
         marginBottom: "24px",
@@ -243,12 +243,12 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>Introduction</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -263,19 +263,19 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>Information We Collect</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
           }}>
             We collect the following types of information:
           </p>
-          <ul style={{ 
+          <ul style={{
             listStyleType: "disc",
             paddingLeft: "20px",
             color: theme.colors.textMuted,
@@ -293,19 +293,19 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>How We Use Your Information</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
           }}>
             We use the collected information for:
           </p>
-          <ul style={{ 
+          <ul style={{
             listStyleType: "disc",
             paddingLeft: "20px",
             color: theme.colors.textMuted,
@@ -323,12 +323,12 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>Data Storage</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -343,19 +343,19 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>Third-Party Services</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
           }}>
             We use the following third-party services:
           </p>
-          <ul style={{ 
+          <ul style={{
             listStyleType: "disc",
             paddingLeft: "20px",
             color: theme.colors.textMuted,
@@ -372,12 +372,12 @@ function Privacy() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>Contact Us</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -392,15 +392,15 @@ function Privacy() {
 
 function Terms() {
   const navigate = useNavigate();
-  
+
   return (
-    <div style={{ 
-      padding: "20px", 
+    <div style={{
+      padding: "20px",
       color: theme.colors.text,
       maxHeight: "600px",
       overflowY: "auto"
     }}>
-      <button 
+      <button
         onClick={() => navigate('/')}
         style={{
           backgroundColor: "transparent",
@@ -424,7 +424,7 @@ function Terms() {
         <span>←</span> Back to Settings
       </button>
 
-      <h1 style={{ 
+      <h1 style={{
         color: theme.colors.primary,
         fontSize: "24px",
         marginBottom: "24px",
@@ -447,12 +447,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>1. Acceptance of Terms</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -467,12 +467,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>2. Description of Service</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -487,19 +487,19 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>3. User Responsibilities</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
           }}>
             You are responsible for:
           </p>
-          <ul style={{ 
+          <ul style={{
             listStyleType: "disc",
             paddingLeft: "20px",
             color: theme.colors.textMuted,
@@ -518,19 +518,19 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>4. Limitations of Use</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
           }}>
             You agree not to use the Service to:
           </p>
-          <ul style={{ 
+          <ul style={{
             listStyleType: "disc",
             paddingLeft: "20px",
             color: theme.colors.textMuted,
@@ -549,12 +549,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>5. Disclaimer of Warranties</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -569,12 +569,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>6. Limitation of Liability</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -589,12 +589,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>7. Changes to Terms</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -609,12 +609,12 @@ function Terms() {
           borderRadius: "12px",
           border: `1px solid ${theme.colors.border}`
         }}>
-          <h2 style={{ 
+          <h2 style={{
             color: theme.colors.primary,
             fontSize: "18px",
             marginBottom: "12px"
           }}>8. Contact Information</h2>
-          <p style={{ 
+          <p style={{
             lineHeight: "1.6",
             color: theme.colors.textMuted,
             fontSize: "14px"
@@ -720,25 +720,25 @@ function SettingsCard() {
         animation: "glow 2s ease-in-out infinite alternate, gradient 3s linear infinite",
         textShadow: `0 0 20px ${theme.colors.primary}40`
       }}>
-        <span style={{ fontSize: 22}}>ReplyGuy <span style={{ fontSize: 10, marginRight: "8px"}}>v0.5.0</span>
+        <span style={{ fontSize: 22 }}>ReplyGuy <span style={{ fontSize: 10, marginRight: "8px" }}>v0.6.1</span>
           <a
-            href="https://ko-fi.com/axdsan"
+            href="https://ko-fi.com/Y8Y7189H2F"
             target="_blank"
             rel="noopener noreferrer"
             style={{
               display: "inline-flex",
               alignItems: "center",
-              fontSize: "12px",
-              color: theme.colors.primary,
-              textDecoration: "none",
-              padding: "2px 8px",
-              borderRadius: "12px",
-              border: `1px solid ${theme.colors.primary}`,
-              transition: "all 0.2s ease",
               verticalAlign: "middle"
             }}
           >
-            Support ☕
+            <img
+              src="https://ko-fi.com/img/githubbutton_sm.svg"
+              alt="ko-fi"
+              style={{
+                maxWidth: "100%",
+                height: "20px"
+              }}
+            />
           </a>
         </span>
       </div>
@@ -885,7 +885,7 @@ function SettingsCard() {
         </div>
         <span style={{ fontSize: 14 }}>Enable Auto-Reply</span>
       </label>
-      
+
       <label // New checkbox for prime functionality
         style={{
           display: "flex",
@@ -1004,13 +1004,6 @@ function SettingsCard() {
             rel="noopener noreferrer"
             style={{ color: theme.colors.primary, marginRight: 12 }}>
             GitHub
-          </a>
-          <a
-            href="https://ko-fi.com/axdsan"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: theme.colors.primary }}>
-            Support on Ko-fi
           </a>
         </div>
       </div>
