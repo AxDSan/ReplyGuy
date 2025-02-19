@@ -29,6 +29,9 @@ importers:
       react-router-dom:
         specifier: ^6.28.1
         version: 6.28.1(react-dom@18.2.0(react@18.2.0))(react@18.2.0)
+      sharp:
+        specifier: ^0.33.5
+        version: 0.33.5
       sweetalert2:
         specifier: ^11.15.10
         version: 11.15.10
