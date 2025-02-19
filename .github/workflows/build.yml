@@ -78,10 +78,13 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm cache clean --force
-          npm install -g node-gyp
-          export PYTHON=/usr/bin/python3
-          npm install --build-from-source --unsafe-perm=true
+          rm -rf node_modules
+          rm -f package-lock.json
+          npm install --ignore-scripts
+          cd node_modules/@parcel/watcher
+          npm install --build-from-source
+          cd ../..
+          npm rebuild
           
       - name: Build Production
         run: npm run build:prod
