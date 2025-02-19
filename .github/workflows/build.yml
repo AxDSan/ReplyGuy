@@ -74,12 +74,14 @@ jobs:
       - name: Install Linux Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential python3
+          sudo apt-get install -y build-essential python3 make g++
 
       - name: Install Dependencies
         run: |
+          npm cache clean --force
           npm install -g node-gyp
-          npm install --legacy-peer-deps
+          npm config set python /usr/bin/python3
+          npm install --build-from-source --unsafe-perm=true
           
       - name: Build Production
         run: npm run build:prod
