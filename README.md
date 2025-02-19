@@ -26,7 +26,7 @@ ReplyGuy ensures API key security through:
 * Access control measures, including context-specific access, memory-safe handling, and automatic cleanup
 * Implementation of best practices, such as zero trust architecture, principle of least privilege, secure error handling, and no external key transmission
 
-## 🚀 Installation
+## 🚀 Local Development
 
 1. Clone this repository:
 
@@ -52,6 +52,33 @@ pnpm dev
 ```bash
 pnpm build
 ```
+
+## 📦 Browser Installation
+
+### Chrome/Chromium-based browsers
+
+1. Build the extension using the steps above
+2. Open Chrome and navigate to `chrome://extensions/`
+3. Enable "Developer mode" in the top right corner
+4. Click "Load unpacked"
+5. Select the `build/chrome-mv3-dev` directory from your build output
+
+### Firefox
+
+1. Build the extension using the steps above
+2. Open Firefox and navigate to `about:debugging#/runtime/this-firefox`
+3. Click "Load Temporary Add-on"
+4. Navigate to your build directory and select the `build/firefox-mv2-dev/manifest.json` file
+
+### Edge
+
+1. Build the extension using the steps above
+2. Open Edge and navigate to `edge://extensions/`
+3. Enable "Developer mode" using the toggle on the left sidebar
+4. Click "Load unpacked"
+5. Select the `build/chrome-mv3-dev` directory from your build output
+
+Note: The extension needs to be rebuilt and reloaded when you make changes to the code.
 
 ## 🔧 Configuration
 ![ReplyGuy](https://i.imgur.com/jlCiWoT.png)
@@ -92,11 +119,23 @@ This extension is built with:
 
 ```
 replyguy/
-├── contents/          # Content scripts
+├── .github/
+│   └── workflows/       # CI/CD workflow configurations
+├── assets/             # Static assets
+│   └── icon.png
+├── contents/
+│   ├── components/     # React components
+│   │   └── ReplyGuyButton.tsx
+│   ├── styles/        # Styling configurations
+│   │   └── buttonStyles.ts
+│   ├── utils/         # Utility functions
+│   │   ├── handlers/  # Event handlers
+│   │   ├── services/  # Service integrations
+│   │   └── types.ts   # TypeScript type definitions
 │   └── content.tsx    # Main content script
-├── popup.tsx          # Extension popup UI
 ├── background.ts      # Background service worker
-└── assets/           # Static assets
+├── popup.tsx         # Extension popup UI
+└── package.json      # Project configuration
 ```
 
 ## 🔍 Selector Monitoring
