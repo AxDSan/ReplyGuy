@@ -1,24 +1,26 @@
 export const buttonStyles = {
-  backgroundColor: "#00ff9d15",
-  color: "#00ff9d",
-  border: "1px solid #00ff9d50",
-  padding: "8px 12px",
-  borderRadius: "20px",
-  fontSize: "15px",
-  fontWeight: "500",
+  backgroundColor: "transparent",
+  color: "rgb(113, 118, 123)",
+  border: "none",
+  padding: "0",
+  borderRadius: "9999px",
+  fontSize: "13px",
+  fontWeight: "400",
   cursor: "pointer",
   display: "flex",
   alignItems: "center",
-  gap: "6px",
-  transition: "all 0.2s ease",
+  gap: "4px",
+  transition: "color 0.2s ease",
   marginLeft: "0",
-  height: "36px",
+  height: "20px",
   position: "relative",
-  zIndex: "1000",
-  minWidth: "36px",
+  minWidth: "20px",
   justifyContent: "center",
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+  fontFamily: "TwitterChirp, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+  ':hover': {
+    color: "#1d9bf0",
+    backgroundColor: "rgba(29, 155, 240, 0.1)"
+  }
 }
 
 export const loadingStyles = {

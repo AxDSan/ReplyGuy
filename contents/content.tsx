@@ -40,6 +40,12 @@ async function addReplyGuyButton(postElement: Element) {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       // Exponential backoff for retries
       await new Promise(resolve => setTimeout(resolve, 500 * attempt))
+      // First try to find the Grok button container
+      const grokContainer = postElement.querySelector('div[role="group"] button[aria-label="Grok actions"]')?.closest('.css-175oi2r.r-18u37iz.r-1h0z5md')
+      if (grokContainer) {
+        return grokContainer
+      }
+      // Fallback to the original tweet actions container if Grok button is not found
       const tweetActions = postElement.querySelector('div[role="group"].r-1kbdv8c')
       if (tweetActions) {
         return tweetActions
@@ -76,9 +82,14 @@ async function addReplyGuyButton(postElement: Element) {
       return
     }
 
+    // Create container div to match Twitter's button container structure
+    const buttonContainer = document.createElement("div")
+    buttonContainer.className = "css-175oi2r r-18u37iz r-1h0z5md r-13awgt0"
+    
     // Create and inject the ReplyGuy button
     const button = ReplyGuyButton({ postElement })
-    tweetActions.insertAdjacentElement("afterend", button)
+    buttonContainer.appendChild(button)
+    tweetActions.appendChild(buttonContainer)
     console.log("Successfully added ReplyGuy button")
   } catch (error) {
     console.error("Error adding button:", error)

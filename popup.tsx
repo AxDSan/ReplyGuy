@@ -720,7 +720,27 @@ function SettingsCard() {
         animation: "glow 2s ease-in-out infinite alternate, gradient 3s linear infinite",
         textShadow: `0 0 20px ${theme.colors.primary}40`
       }}>
-        <span style={{ fontSize: 22}}>ReplyGuy <span style={{ fontSize: 10}}>v0.5.0</span></span>
+        <span style={{ fontSize: 22}}>ReplyGuy <span style={{ fontSize: 10, marginRight: "8px"}}>v0.5.0</span>
+          <a
+            href="https://ko-fi.com/axdsan"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: "12px",
+              color: theme.colors.primary,
+              textDecoration: "none",
+              padding: "2px 8px",
+              borderRadius: "12px",
+              border: `1px solid ${theme.colors.primary}`,
+              transition: "all 0.2s ease",
+              verticalAlign: "middle"
+            }}
+          >
+            Support ☕
+          </a>
+        </span>
       </div>
 
       <style>{`
@@ -982,8 +1002,15 @@ function SettingsCard() {
             href="https://github.com/axdsan/replyguy"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: theme.colors.primary }}>
+            style={{ color: theme.colors.primary, marginRight: 12 }}>
             GitHub
+          </a>
+          <a
+            href="https://ko-fi.com/axdsan"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: theme.colors.primary }}>
+            Support on Ko-fi
           </a>
         </div>
       </div>
