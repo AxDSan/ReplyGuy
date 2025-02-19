@@ -80,7 +80,7 @@ jobs:
         run: |
           npm cache clean --force
           npm install -g node-gyp
-          npm config set python /usr/bin/python3
+          export PYTHON=/usr/bin/python3
           npm install --build-from-source --unsafe-perm=true
           
       - name: Build Production
