@@ -1,7 +1,7 @@
 {
   "name": "replyguy",
   "displayName": "ReplyGuy",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "A browser extension that adds AI-powered reply capabilities to your X/Twitter experience. Built with Plasmo and powered by OpenRouter.",
   "author": "@abdiisan",
   "scripts": {
